@@ -77,7 +77,7 @@ public class PomTest {
     }
 
     @Test
-    public void testPomDependencies1() throws Exception {
+    public void testPomDependencies() throws Exception {
         List<String> deps = list("com.acme:bar:1.2", "com.acme:baz:3.4:jdk8(org.asd:qqq,com.gogo:bad)");
 
         Model pom = newPom();
@@ -103,10 +103,8 @@ public class PomTest {
     }
 
     private InputStream toInputStream(Model model) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try(ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             new MavenXpp3Writer().write(baos, model);
-            baos.close();
             return new ByteArrayInputStream(baos.toByteArray());
         } catch (IOException e) {
             throw new AssertionError(e);
@@ -115,12 +113,12 @@ public class PomTest {
 
     private static final Pattern PAT_DEPENDENCY = Pattern.compile("(?<groupId>[^:\\(\\)]+):(?<artifactId>[^:\\(\\)]+)(:(?<version>[^:\\(\\)]*))?(:(?<classifier>[^:\\(\\)]+))?(\\((?<exclusions>[^\\(\\)]*)\\))?");
 
-    static Dependency coordsToDependency(final String depString) {
+    static Dependency coordsToDependency(String depString) {
         final Matcher m = PAT_DEPENDENCY.matcher(depString);
         if (!m.matches())
             throw new IllegalArgumentException("Could not parse dependency: " + depString);
 
-        Dependency d = new Dependency();
+        final Dependency d = new Dependency();
         d.setGroupId(m.group("groupId"));
         d.setArtifactId(m.group("artifactId"));
         String version = m.group("version");

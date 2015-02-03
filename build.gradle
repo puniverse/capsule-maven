@@ -114,6 +114,10 @@ shadowJar {
     classifier = 'shadow'
     destinationDir = file("$buildDir/libs")
 
+    dependencies {
+        exclude(dependency('co.paralleluniverse:capsule:.*'))
+    }
+    
     exclude 'META-INF/**'
     exclude 'licenses/**' // licenses to thoughtworks CruiseControl, Javolution, and Indiana University Extreme! Labs, none of which are used by Capsule
     exclude 'about.html'

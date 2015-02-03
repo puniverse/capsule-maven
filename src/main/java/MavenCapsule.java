@@ -182,8 +182,23 @@ public class MavenCapsule extends Capsule {
     protected List<Path> resolveDependencies(List<String> dependencies, String type) {
         if (dependencies == null)
             return null;
-        final List<Path> res = getDependencyManager().resolveDependencies(dependencies, type);
-        return res;
+        
+        final List<Path> res = new ArrayList<>();
+        final List<String> deps = new ArrayList<>();
+        for (String dep : dependencies) {
+            try {
+                List<Path> r = super.resolveDependency(dep, type);
+                if (r != null) {
+                    res.addAll(r);
+                    continue;
+                }
+            } catch (IllegalStateException e) {
+            }
+            deps.add(dep);
+        }
+        
+        res.addAll(getDependencyManager().resolveDependencies(deps, type));
+        return emptyToNull(res);
     }
 
     @Override
@@ -191,11 +206,15 @@ public class MavenCapsule extends Capsule {
     protected List<Path> resolveDependency(String coords, String type) {
         if (coords == null)
             return null;
-        List<Path> res;
-        res = super.resolveDependency(coords, type);
-        if (res == null || res.isEmpty())
-            res = getDependencyManager().resolveDependency(coords, type);
-        return res;
+
+        try {
+            List<Path> res = super.resolveDependency(coords, type);
+            if (res != null && !res.isEmpty())
+                return res;
+        } catch (IllegalStateException e) {
+        }
+
+        return getDependencyManager().resolveDependency(coords, type);
     }
 
     @Override
@@ -209,7 +228,7 @@ public class MavenCapsule extends Capsule {
 
     private List<String> getRepositories() {
         final List<String> repos = new ArrayList<String>();
-        repos.addAll(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*"));
+        repos.addAll(nullToEmpty(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*")));
         repos.addAll(getListAttribute(ATTR_REPOSITORIES));
         if (pom != null)
             addAllIfNotContained(repos, nullToEmpty(pom.getRepositories()));
@@ -329,16 +348,20 @@ public class MavenCapsule extends Capsule {
         return p != null ? p.toAbsolutePath().normalize() : null;
     }
 
-    private static <T> List<T> nullToEmpty(List<T> list) {
-        return list != null ? list : (List<T>) emptyList();
-    }
-
     private static <C extends Collection<T>, T> C addAllIfNotContained(C c, Collection<T> c1) {
         for (T e : c1) {
             if (!c.contains(e))
                 c.add(e);
         }
         return c;
+    }
+
+    private static <T> List<T> nullToEmpty(List<T> list) {
+        return list != null ? list : (List<T>) emptyList();
+    }
+
+    private static <T extends Collection<?>> T emptyToNull(T c) {
+        return (c == null || c.isEmpty()) ? null : c;
     }
 
     private static String emptyToNull(String s) {

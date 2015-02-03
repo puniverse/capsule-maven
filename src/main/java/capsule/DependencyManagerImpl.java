@@ -248,6 +248,8 @@ public class DependencyManagerImpl implements DependencyManager {
     }
 
     protected List<Path> resolve(CollectRequest collectRequest) {
+        if (isLogging(LOG_DEBUG))
+            log(LOG_DEBUG, "DependencyManager.resolve " + collectRequest);
         try {
             final DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
             final List<ArtifactResult> artifactResults = system.resolveDependencies(session, dependencyRequest).getArtifactResults();
@@ -255,6 +257,8 @@ public class DependencyManagerImpl implements DependencyManager {
             final List<Path> jars = new ArrayList<Path>();
             for (ArtifactResult artifactResult : artifactResults)
                 jars.add(artifactResult.getArtifact().getFile().toPath().toAbsolutePath());
+            if (isLogging(LOG_DEBUG))
+                log(LOG_DEBUG, "DependencyManager.resolve: " + jars);
             return jars;
         } catch (DependencyResolutionException e) {
             throw new RuntimeException("Error resolving dependencies.", e);

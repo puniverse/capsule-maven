@@ -7,7 +7,7 @@
  */
 
 import capsule.DependencyManager;
-import capsule.DependencyManagerImpl;
+import capsule.DependencyManager;
 import capsule.PomReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -261,7 +261,7 @@ public class MavenCapsule extends Capsule {
      * @deprecated marked deprecated to exclude from javadoc.
      */
     protected DependencyManager createDependencyManager(Path localRepo, boolean reset, int logLevel) {
-        return new DependencyManagerImpl(localRepo, reset, logLevel);
+        return new DependencyManager(localRepo, reset, logLevel);
     }
 
     private void setDependencyRepositories(List<String> repositories) {

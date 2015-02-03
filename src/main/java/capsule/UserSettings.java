@@ -8,8 +8,8 @@
  */
 package capsule;
 
-import static capsule.DependencyManagerImpl.DEFAULT_LOCAL_MAVEN;
-import static capsule.DependencyManagerImpl.emptyToNull;
+import static capsule.DependencyManager.DEFAULT_LOCAL_MAVEN;
+import static capsule.DependencyManager.emptyToNull;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;

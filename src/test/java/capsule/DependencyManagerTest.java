@@ -172,7 +172,7 @@ public class DependencyManagerTest {
     }
 
     private static Dependency dep(String desc) {
-        return DependencyManagerImpl.toDependency(desc, "jar");
+        return DependencyManager.toDependency(desc, "jar");
     }
 
     private static Exclusion exc(Dependency dep, int i) {
@@ -181,6 +181,6 @@ public class DependencyManagerTest {
 
     private static RemoteRepository repo(String desc) {
         final RepositoryPolicy policy = new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_NEVER, RepositoryPolicy.CHECKSUM_POLICY_WARN);
-        return DependencyManagerImpl.createRepo(desc, policy, policy);
+        return DependencyManager.createRepo(desc, policy, policy);
     }
 }

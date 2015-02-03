@@ -42,7 +42,7 @@ public class Dependencies {
     }
 
     private static String toCapsuleArtifactString(Artifact a) {
-        return DependencyManagerImpl.artifactToCoords(a);
+        return DependencyManager.artifactToCoords(a);
     }
 
     private static String toCapsuleExclusionsString(Collection<Exclusion> exclusions) {

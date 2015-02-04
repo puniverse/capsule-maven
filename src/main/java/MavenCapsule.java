@@ -7,7 +7,6 @@
  */
 
 import capsule.DependencyManager;
-import capsule.DependencyManager;
 import capsule.PomReader;
 import java.io.IOException;
 import java.io.InputStream;

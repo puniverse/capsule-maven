@@ -356,6 +356,7 @@ public class MavenCapsule extends Capsule {
         return c;
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> List<T> nullToEmpty(List<T> list) {
         return list != null ? list : (List<T>) emptyList();
     }

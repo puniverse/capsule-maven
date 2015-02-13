@@ -18,7 +18,6 @@ import java.util.Map.Entry;
 import static java.util.Arrays.asList;
 import java.util.Collection;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableList;
 import java.util.List;
 
 /**
@@ -36,7 +35,7 @@ public class MavenCapsule extends Capsule {
     private static final Entry<String, Boolean> ATTR_ALLOW_SNAPSHOTS = ATTRIBUTE("Allow-Snapshots", T_BOOL(), false, true, "Whether or not SNAPSHOT dependencies are allowed");
 
     private static final String ATTR_APP_NAME = "Application-Name";
-            
+
     private static final String ENV_CAPSULE_REPOS = "CAPSULE_REPOS";
     private static final String ENV_CAPSULE_LOCAL_REPO = "CAPSULE_LOCAL_REPO";
 
@@ -47,6 +46,8 @@ public class MavenCapsule extends Capsule {
     private PomReader pom;
     private Path localRepo;
 
+    //<editor-fold defaultstate="collapsed" desc="Constructors">
+    /////////// Constructors ///////////////////////////////////
     public MavenCapsule(Path jarFile) {
         super(jarFile);
     }
@@ -63,6 +64,7 @@ public class MavenCapsule extends Capsule {
 
         super.finalizeCapsule();
     }
+    //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Main Operations">
     /////////// Main Operations ///////////////////////////////////
@@ -136,6 +138,8 @@ public class MavenCapsule extends Capsule {
     }
     //</editor-fold>
 
+    //<editor-fold defaultstate="collapsed" desc="Capsule Overrides">
+    /////////// Capsule Overrides ///////////////////////////////////
     @Override
     protected String[] buildAppId() {
         String name;
@@ -167,6 +171,27 @@ public class MavenCapsule extends Capsule {
             return super.buildAppId();
 
         return new String[]{name, version};
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <T> T attribute(Entry<String, T> attr) {
+        if (attr == ATTR_DEPENDENCIES) {
+            List<String> deps = super.attribute(ATTR_DEPENDENCIES);
+            if ((deps == null || deps.isEmpty()) && pom != null)
+                deps = pom.getDependencies();
+            return (T) deps;
+        }
+        if (attr == ATTR_REPOSITORIES) {
+            final List<String> repos = new ArrayList<String>();
+            repos.addAll(nullToEmpty(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*")));
+            repos.addAll(super.attribute(ATTR_REPOSITORIES));
+            if (pom != null)
+                addAllIfNotContained(repos, nullToEmpty(pom.getRepositories()));
+
+            return (T) repos;
+        }
+        return super.attribute(attr);
     }
 
     @Override
@@ -208,28 +233,10 @@ public class MavenCapsule extends Capsule {
 
         return getDependencyManager().resolveDependency(coords, type);
     }
+    //</editor-fold>
 
-    @Override
-    @SuppressWarnings("unchecked")
-    protected <T> T attribute(Entry<String, T> attr) {
-        if (attr == ATTR_DEPENDENCIES) {
-            List<String> deps = super.attribute(ATTR_DEPENDENCIES);
-            if ((deps == null || deps.isEmpty()) && pom != null)
-                deps = pom.getDependencies();
-            return (T) deps;
-        }
-        if (attr == ATTR_REPOSITORIES) {
-            final List<String> repos = new ArrayList<String>();
-            repos.addAll(nullToEmpty(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*")));
-            repos.addAll(super.attribute(ATTR_REPOSITORIES));
-            if (pom != null)
-                addAllIfNotContained(repos, nullToEmpty(pom.getRepositories()));
-
-            return (T) repos;
-        }
-        return super.attribute(attr);
-    }
-
+    //<editor-fold defaultstate="collapsed" desc="Internal Methods">
+    /////////// Internal Methods ///////////////////////////////////
     private DependencyManager getDependencyManager() {
         final DependencyManager dm = initDependencyManager();
         if (dm == null)
@@ -314,6 +321,7 @@ public class MavenCapsule extends Capsule {
     private String[] getPomAppNameAndVersion() {
         return new String[]{pom.getGroupId() + "_" + pom.getArtifactId(), pom.getVersion()};
     }
+    //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Utils">
     /////////// Utils ///////////////////////////////////

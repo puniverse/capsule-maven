@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Map.Entry;
 import static java.util.Arrays.asList;
 import java.util.Collection;
 import static java.util.Collections.emptyList;
@@ -31,17 +32,11 @@ public class MavenCapsule extends Capsule {
     private static final String PROP_RESET = "capsule.reset";
     private static final String PROP_USER_HOME = "user.home";
 
-    private static final String ATTR_REPOSITORIES = ATTRIBUTE("Repositories", "central", true, "A list of Maven repositories, each formatted as URL or NAME(URL)");
-    private static final String ATTR_ALLOW_SNAPSHOTS = ATTRIBUTE("Allow-Snapshots", "false", true, "Whether or not SNAPSHOT dependencies are allowed");
-    private static final String ATTR_APP_NAME = "Application-Name";
-    private static final String ATTR_APP_ARTIFACT = "Application";
-    private static final String ATTR_APP_CLASS_PATH = "App-Class-Path";
-    private static final String ATTR_BOOT_CLASS_PATH = "Boot-Class-Path";
-    private static final String ATTR_BOOT_CLASS_PATH_A = "Boot-Class-Path-A";
-    private static final String ATTR_BOOT_CLASS_PATH_P = "Boot-Class-Path-P";
-    private static final String ATTR_JAVA_AGENTS = "Java-Agents";
-    private static final String ATTR_NATIVE_AGENTS = "Native-Agents";
+    private static final Entry<String, List<String>> ATTR_REPOSITORIES = ATTRIBUTE("Repositories", T_LIST(T_STRING()), asList("central"), true, "A list of Maven repositories, each formatted as URL or NAME(URL)");
+    private static final Entry<String, Boolean> ATTR_ALLOW_SNAPSHOTS = ATTRIBUTE("Allow-Snapshots", T_BOOL(), false, true, "Whether or not SNAPSHOT dependencies are allowed");
 
+    private static final String ATTR_APP_NAME = "Application-Name";
+            
     private static final String ENV_CAPSULE_REPOS = "CAPSULE_REPOS";
     private static final String ENV_CAPSULE_LOCAL_REPO = "CAPSULE_LOCAL_REPO";
 
@@ -64,7 +59,7 @@ public class MavenCapsule extends Capsule {
     protected void finalizeCapsule() {
         this.pom = createPomReader();
         if (dependencyManager != null)
-            setDependencyRepositories(getRepositories());
+            setDependencyRepositories(getAttribute(ATTR_REPOSITORIES));
 
         super.finalizeCapsule();
     }
@@ -99,7 +94,7 @@ public class MavenCapsule extends Capsule {
         verifyNonEmpty("Cannot resolve a wrapper capsule.");
 
         final List<String> deps = new ArrayList<>();
-        deps.add(ATTR_APP_ARTIFACT);
+        deps.add(getAttribute(ATTR_APP_ARTIFACT));
         addAllIfNotContained(deps, getAllDependencies());
         resolveDependencies(deps, "jar");
 
@@ -115,13 +110,15 @@ public class MavenCapsule extends Capsule {
 
     private List<String> getAllDependencies() {
         final List<String> deps = new ArrayList<>();
-        for (List<String> xs : asList(getDependencies(),
-                getListAttribute(ATTR_APP_CLASS_PATH),
-                getListAttribute(ATTR_BOOT_CLASS_PATH),
-                getListAttribute(ATTR_BOOT_CLASS_PATH_P),
-                getListAttribute(ATTR_BOOT_CLASS_PATH_A),
-                getListAttribute(ATTR_JAVA_AGENTS),
-                getListAttribute(ATTR_NATIVE_AGENTS)))
+        for (Collection<String> xs : asList(
+                getAttribute(ATTR_DEPENDENCIES),
+                getAttribute(ATTR_NATIVE_DEPENDENCIES).keySet(),
+                getAttribute(ATTR_APP_CLASS_PATH),
+                getAttribute(ATTR_BOOT_CLASS_PATH),
+                getAttribute(ATTR_BOOT_CLASS_PATH_P),
+                getAttribute(ATTR_BOOT_CLASS_PATH_A),
+                getAttribute(ATTR_JAVA_AGENTS).keySet(),
+                getAttribute(ATTR_NATIVE_AGENTS).keySet()))
             addAllIfNotContained(deps, nullToEmpty(filterArtifacts(xs)));
 
         return deps;
@@ -129,16 +126,12 @@ public class MavenCapsule extends Capsule {
 
     private List<String> getAllNativeDependencies() {
         final List<String> deps = new ArrayList<>();
-
-        final List<String> depsAndRename = getNativeDependencies();
-        if (depsAndRename != null && !depsAndRename.isEmpty()) {
-            for (String x : depsAndRename) {
-                final String dep = x.split(",")[0].trim();
-                if (isDependency(dep))
+        for (Collection<String> xs : asList(getAttribute(ATTR_NATIVE_DEPENDENCIES).keySet(), getAttribute(ATTR_NATIVE_AGENTS).keySet())) {
+            for (String x : xs) {
+                if (isDependency(x))
                     deps.add(x);
             }
         }
-
         return deps;
     }
     //</editor-fold>
@@ -181,7 +174,7 @@ public class MavenCapsule extends Capsule {
     protected List<Path> resolveDependencies(List<String> dependencies, String type) {
         if (dependencies == null)
             return null;
-        
+
         final List<Path> res = new ArrayList<>();
         final List<String> deps = new ArrayList<>();
         for (String dep : dependencies) {
@@ -195,7 +188,7 @@ public class MavenCapsule extends Capsule {
             }
             deps.add(dep);
         }
-        
+
         res.addAll(getDependencyManager().resolveDependencies(deps, type));
         return emptyToNull(res);
     }
@@ -217,22 +210,24 @@ public class MavenCapsule extends Capsule {
     }
 
     @Override
-    protected List<String> getDependencies() {
-        List<String> deps = super.getDependencies();
-        if ((deps == null || deps.isEmpty()) && pom != null)
-            deps = pom.getDependencies();
+    @SuppressWarnings("unchecked")
+    protected <T> T attribute(Entry<String, T> attr) {
+        if (attr == ATTR_DEPENDENCIES) {
+            List<String> deps = super.attribute(ATTR_DEPENDENCIES);
+            if ((deps == null || deps.isEmpty()) && pom != null)
+                deps = pom.getDependencies();
+            return (T) deps;
+        }
+        if (attr == ATTR_REPOSITORIES) {
+            final List<String> repos = new ArrayList<String>();
+            repos.addAll(nullToEmpty(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*")));
+            repos.addAll(super.attribute(ATTR_REPOSITORIES));
+            if (pom != null)
+                addAllIfNotContained(repos, nullToEmpty(pom.getRepositories()));
 
-        return (deps != null && !deps.isEmpty()) ? unmodifiableList(deps) : null;
-    }
-
-    private List<String> getRepositories() {
-        final List<String> repos = new ArrayList<String>();
-        repos.addAll(nullToEmpty(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*")));
-        repos.addAll(getListAttribute(ATTR_REPOSITORIES));
-        if (pom != null)
-            addAllIfNotContained(repos, nullToEmpty(pom.getRepositories()));
-
-        return !repos.isEmpty() ? unmodifiableList(repos) : null;
+            return (T) repos;
+        }
+        return super.attribute(attr);
     }
 
     private DependencyManager getDependencyManager() {
@@ -246,7 +241,7 @@ public class MavenCapsule extends Capsule {
         if (dependencyManager == null) {
             dependencyManager = createDependencyManager();
             if (dependencyManager != null)
-                setDependencyRepositories(getRepositories());
+                setDependencyRepositories(getAttribute(ATTR_REPOSITORIES));
         }
         return dependencyManager;
     }
@@ -264,7 +259,7 @@ public class MavenCapsule extends Capsule {
     }
 
     private void setDependencyRepositories(List<String> repositories) {
-        getDependencyManager().setRepos(repositories, Boolean.parseBoolean(getAttribute(ATTR_ALLOW_SNAPSHOTS)));
+        getDependencyManager().setRepos(repositories, getAttribute(ATTR_ALLOW_SNAPSHOTS));
     }
 
     private Path getLocalRepo() {
@@ -295,7 +290,7 @@ public class MavenCapsule extends Capsule {
         return lib.contains(":") && !lib.contains(":\\");
     }
 
-    private static List<String> filterArtifacts(List<String> xs) {
+    private static List<String> filterArtifacts(Collection<String> xs) {
         if (xs == null)
             return null;
         final List<String> res = new ArrayList<>();

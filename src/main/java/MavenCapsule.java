@@ -251,10 +251,12 @@ public class MavenCapsule extends Capsule {
         return createDependencyManager(getLocalRepo().toAbsolutePath(), reset, getLogLevel());
     }
 
-    /**
-     * @deprecated marked deprecated to exclude from javadoc.
-     */
     protected DependencyManager createDependencyManager(Path localRepo, boolean reset, int logLevel) {
+        MavenCapsule ct;
+        return (ct = getCallTarget(MavenCapsule.class)) != null ? ct.createDependencyManager(localRepo, reset, logLevel) : createDependencyManager0(localRepo, reset, logLevel);
+    }
+
+    private DependencyManager createDependencyManager0(Path localRepo, boolean reset, int logLevel) {
         return new DependencyManager(localRepo, reset, logLevel);
     }
 

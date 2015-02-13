@@ -1,10 +1,5 @@
 buildscript {
-    //    repositories {
-    //        mavenCentral()
-    //        // jcenter()
-    //    }
     dependencies {
-        // classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
         classpath 'net.sf.proguard:proguard-gradle:5.0'
     }
 }
@@ -114,7 +109,7 @@ shadowJar {
     classifier = 'shadow'
     destinationDir = file("$buildDir/libs")
 
-    dependencies { exclude(dependency('co.paralleluniverse:capsule:.*')) }
+    // dependencies { exclude(dependency('co.paralleluniverse:capsule:.*')) }
     
     exclude 'META-INF/**'
     exclude 'licenses/**' // licenses to thoughtworks CruiseControl, Javolution, and Indiana University Extreme! Labs, none of which are used by Capsule
@@ -140,6 +135,7 @@ task proguard(type: proguard.gradle.ProGuardTask, dependsOn:[shadowJar]) {
     outjars "$buildDir/libs/${project.name}-${version}-shrunk.jar"
     libraryjars "${System.getProperty('java.home')}/lib/rt.jar"
     keep "class ${caplet} { *; }"
+    keep "class Capsule { *; }"
     keepclassmembers 'enum * {**[] $VALUES;public static **[] values();public static ** valueOf(java.lang.String);}'
     keep 'class capsule.org.eclipse.aether.AbstractForwardingRepositorySystemSession { *; }'
     dontoptimize
@@ -199,8 +195,6 @@ tasks.withType(JavaExec) {
 }
 
 ///////// Publish Artifacts
-
-
 artifacts {
     archives jar
     archives sourcesJar

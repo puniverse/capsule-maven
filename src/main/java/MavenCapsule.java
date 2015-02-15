@@ -34,8 +34,6 @@ public class MavenCapsule extends Capsule {
     private static final Entry<String, List<String>> ATTR_REPOSITORIES = ATTRIBUTE("Repositories", T_LIST(T_STRING()), asList("central"), true, "A list of Maven repositories, each formatted as URL or NAME(URL)");
     private static final Entry<String, Boolean> ATTR_ALLOW_SNAPSHOTS = ATTRIBUTE("Allow-Snapshots", T_BOOL(), false, true, "Whether or not SNAPSHOT dependencies are allowed");
 
-    private static final String ATTR_APP_NAME = "Application-Name";
-
     private static final String ENV_CAPSULE_REPOS = "CAPSULE_REPOS";
     private static final String ENV_CAPSULE_LOCAL_REPO = "CAPSULE_LOCAL_REPO";
 
@@ -45,6 +43,7 @@ public class MavenCapsule extends Capsule {
     private DependencyManager dependencyManager;
     private PomReader pom;
     private Path localRepo;
+    private String version; // app version cache
 
     //<editor-fold defaultstate="collapsed" desc="Constructors">
     /////////// Constructors ///////////////////////////////////
@@ -70,25 +69,24 @@ public class MavenCapsule extends Capsule {
     /////////// Main Operations ///////////////////////////////////
     void printDependencyTree(List<String> args) {
         verifyNonEmpty("Cannot print dependencies of a wrapper capsule.");
-        System.out.println("Dependencies for " + getAppId());
+        STDOUT.println("Dependencies for " + getAppId());
 
         if (hasAttribute(ATTR_APP_ARTIFACT)) {
             final String appArtifact = getAttribute(ATTR_APP_ARTIFACT);
-            if (appArtifact == null)
-                throw new IllegalStateException("capsule " + getJarFile() + " has nothing to run");
-            getDependencyManager().printDependencyTree(appArtifact, "jar", System.out);
+            if (isDependency(appArtifact))
+                getDependencyManager().printDependencyTree(appArtifact, "jar", STDOUT);
         } else {
             final List<String> deps = getAllDependencies();
             if (deps.isEmpty())
-                System.out.println("No external dependencies.");
+                STDOUT.println("No external dependencies.");
             else
-                getDependencyManager().printDependencyTree(deps, "jar", System.out);
+                getDependencyManager().printDependencyTree(deps, "jar", STDOUT);
         }
 
         final List<String> nativeDeps = getAllNativeDependencies();
         if (!nativeDeps.isEmpty()) {
-            System.out.println("\nNative Dependencies:");
-            getDependencyManager().printDependencyTree(nativeDeps, getNativeLibExtension(), System.out);
+            STDOUT.println("\nNative Dependencies:");
+            getDependencyManager().printDependencyTree(nativeDeps, getNativeLibExtension(), STDOUT);
         }
     }
 
@@ -97,7 +95,7 @@ public class MavenCapsule extends Capsule {
 
         final List<String> deps = new ArrayList<>();
         deps.add(getAttribute(ATTR_APP_ARTIFACT));
-        addAllIfNotContained(deps, getAllDependencies());
+        addAllIfAbsent(deps, getAllDependencies());
         resolveDependencies(deps, "jar");
 
         resolveDependencies(getAllNativeDependencies(), getNativeLibExtension());
@@ -121,7 +119,7 @@ public class MavenCapsule extends Capsule {
                 getAttribute(ATTR_BOOT_CLASS_PATH_A),
                 getAttribute(ATTR_JAVA_AGENTS).keySet(),
                 getAttribute(ATTR_NATIVE_AGENTS).keySet()))
-            addAllIfNotContained(deps, nullToEmpty(filterArtifacts(xs)));
+            addAllIfAbsent(deps, nullToEmpty(filterArtifacts(xs)));
 
         return deps;
     }
@@ -141,53 +139,40 @@ public class MavenCapsule extends Capsule {
     //<editor-fold defaultstate="collapsed" desc="Capsule Overrides">
     /////////// Capsule Overrides ///////////////////////////////////
     @Override
-    protected String[] buildAppId() {
-        String name;
-        String version = null;
-
-        name = getAttribute(ATTR_APP_NAME);
-
-        if (name == null) {
-            final String appArtifact = getAttribute(ATTR_APP_ARTIFACT);
-            if (appArtifact != null) {
-                if (isDependency(appArtifact)) {
-                    @SuppressWarnings("deprecation")
-                    final String[] nameAndVersion = getAppArtifactId(getDependencyManager().getLatestVersion(appArtifact, "jar"));
-                    name = nameAndVersion[0];
-                    version = nameAndVersion[1];
-                } else
-                    return null;
-            }
-        }
-        if (name == null) {
-            if (pom != null) {
-                final String[] nameAndVersion = getPomAppNameAndVersion();
-                name = nameAndVersion[0];
-                version = nameAndVersion[1];
-            }
-        }
-
-        if (name == null)
-            return super.buildAppId();
-
-        return new String[]{name, version};
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     protected <T> T attribute(Entry<String, T> attr) {
-        if (attr == ATTR_DEPENDENCIES) {
+        if (ATTR_APP_ID == attr) {
+            String id = super.attribute(ATTR_APP_ID);
+            if (id == null && pom != null)
+                id = pom.getGroupId() + "." + pom.getArtifactId();
+            return (T) id;
+        }
+
+        if (ATTR_APP_VERSION == attr) {
+            String ver = super.attribute(ATTR_APP_VERSION);
+            if (ver == null && version != null)
+                ver = version;
+            if (ver == null && hasAttribute(ATTR_APP_ARTIFACT) && isDependency(getAttribute(ATTR_APP_ARTIFACT)))
+                ver = getAppArtifactVersion(getDependencyManager().getLatestVersion(getAttribute(ATTR_APP_VERSION), "jar"));
+            if (ver == null && pom != null)
+                ver = pom.getVersion();
+            this.version = ver; // cache
+            return (T) ver;
+        }
+
+        if (ATTR_DEPENDENCIES == attr) {
             List<String> deps = super.attribute(ATTR_DEPENDENCIES);
             if ((deps == null || deps.isEmpty()) && pom != null)
                 deps = pom.getDependencies();
             return (T) deps;
         }
-        if (attr == ATTR_REPOSITORIES) {
+
+        if (ATTR_REPOSITORIES == attr) {
             final List<String> repos = new ArrayList<String>();
             repos.addAll(nullToEmpty(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*")));
             repos.addAll(super.attribute(ATTR_REPOSITORIES));
             if (pom != null)
-                addAllIfNotContained(repos, nullToEmpty(pom.getRepositories()));
+                addAllIfAbsent(repos, nullToEmpty(pom.getRepositories()));
 
             return (T) repos;
         }
@@ -237,6 +222,14 @@ public class MavenCapsule extends Capsule {
 
     //<editor-fold defaultstate="collapsed" desc="Internal Methods">
     /////////// Internal Methods ///////////////////////////////////
+    private PomReader createPomReader() {
+        try (InputStream is = getEntryInputStream(getJarFile(), POM_FILE)) {
+            return is != null ? new PomReader(is) : null;
+        } catch (IOException e) {
+            throw new RuntimeException("Could not read " + POM_FILE, e);
+        }
+    }
+
     private DependencyManager getDependencyManager() {
         final DependencyManager dm = initDependencyManager();
         if (dm == null)
@@ -286,17 +279,13 @@ public class MavenCapsule extends Capsule {
                 } catch (IOException e) {
                     log(LOG_VERBOSE, "Could not create local repo at " + repo);
                     if (isLogging(LOG_VERBOSE))
-                        e.printStackTrace(System.err);
+                        e.printStackTrace(STDERR);
                     repo = null;
                 }
             }
             localRepo = repo;
         }
         return localRepo;
-    }
-
-    private static boolean isDependency(String lib) {
-        return lib.contains(":") && !lib.contains(":\\");
     }
 
     private static List<String> filterArtifacts(Collection<String> xs) {
@@ -310,16 +299,8 @@ public class MavenCapsule extends Capsule {
         return res;
     }
 
-    private PomReader createPomReader() {
-        try (InputStream is = getEntryInputStream(getJarFile(), POM_FILE)) {
-            return is != null ? new PomReader(is) : null;
-        } catch (IOException e) {
-            throw new RuntimeException("Could not read " + POM_FILE, e);
-        }
-    }
-
-    private String[] getPomAppNameAndVersion() {
-        return new String[]{pom.getGroupId() + "_" + pom.getArtifactId(), pom.getVersion()};
+    private static boolean isDependency(String lib) {
+        return lib.contains(":") && !lib.contains(":\\");
     }
     //</editor-fold>
 
@@ -352,7 +333,7 @@ public class MavenCapsule extends Capsule {
         return p != null ? p.toAbsolutePath().normalize() : null;
     }
 
-    private static <C extends Collection<T>, T> C addAllIfNotContained(C c, Collection<T> c1) {
+    private static <C extends Collection<T>, T> C addAllIfAbsent(C c, Collection<T> c1) {
         for (T e : c1) {
             if (!c.contains(e))
                 c.add(e);
@@ -374,6 +355,19 @@ public class MavenCapsule extends Capsule {
             return null;
         s = s.trim();
         return s.isEmpty() ? null : s;
+    }
+
+    private static List<String> split(String str, String separator) {
+        if (str == null)
+            return null;
+        final String[] es = str.split(separator);
+        final List<String> list = new ArrayList<>(es.length);
+        for (String e : es) {
+            e = e.trim();
+            if (!e.isEmpty())
+                list.add(e);
+        }
+        return list;
     }
     //</editor-fold>
 }

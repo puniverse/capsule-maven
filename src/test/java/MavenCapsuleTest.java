@@ -7,17 +7,15 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
+import capsule.DependencyManager;
 import co.paralleluniverse.capsule.Jar;
+import co.paralleluniverse.capsule.test.CapsuleTestUtils;
+import static co.paralleluniverse.capsule.test.CapsuleTestUtils.*;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -35,26 +33,31 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static com.google.common.truth.Truth.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import org.junit.Before;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 /**
  *
  * @author pron
  */
-public class PomTest {
+public class MavenCapsuleTest {
     private final FileSystem fs = Jimfs.newFileSystem();
     private final Path cache = fs.getPath("/cache");
     private final Path tmp = fs.getPath("/tmp");
+    private Map<String, List<Path>> deps;
     private Properties props;
 
     @Before
     public void setUp() throws Exception {
-        accessible(Capsule.class.getDeclaredField("CACHE_DIR")).set(null, cache);
-
+        deps = null;
         props = new Properties(System.getProperties());
-        accessible(Capsule.class.getDeclaredField("PROPERTIES")).set(null, props);
+        setProperties(props);
+        setCacheDir(cache);
     }
 
     @Test
@@ -103,7 +106,7 @@ public class PomTest {
     }
 
     private InputStream toInputStream(Model model) {
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             new MavenXpp3Writer().write(baos, model);
             return new ByteArrayInputStream(baos.toByteArray());
         } catch (IOException e) {
@@ -155,24 +158,52 @@ public class PomTest {
     }
     //</editor-fold>
 
+    //<editor-fold defaultstate="collapsed" desc="Dependency Manager Utilities">
+    /////////// Dependency Manager Utilities ///////////////////////////////////
+    private Path mockDep(DependencyManager dm, String dep, String type) {
+        return mockDep(dm, dep, type, dep).get(0);
+    }
+
+    private List<Path> mockDep(DependencyManager dm, String dep, String type, String... artifacts) {
+        List<Path> as = new ArrayList<>(artifacts.length);
+        for (String a : artifacts)
+            as.add(artifact(a, type));
+
+        if (deps == null)
+            this.deps = new HashMap<>();
+        deps.put(dep, as);
+
+        when(dm.resolveDependency(dep, type)).thenReturn(as);
+        when(dm.resolveDependencies(anyList(), eq(type))).thenAnswer(new Answer<List<Path>>() {
+            @Override
+            public List<Path> answer(InvocationOnMock invocation) throws Throwable {
+                List<String> coords = (List<String>) invocation.getArguments()[0];
+                List<Path> res = new ArrayList<>();
+                for (String dep : coords)
+                    res.addAll(deps.get(dep));
+
+                return res;
+            }
+        });
+
+        return as;
+    }
+
+    private Path artifact(String x, String type) {
+        String[] coords = x.split(":");
+        String group = coords[0];
+        String artifact = coords[1];
+        String artifactDir = artifact.split("-")[0]; // arbitrary
+        String version = coords[2] + (coords.length > 3 ? "-" + coords[3] : "");
+        return cache.resolve("deps").resolve(group).resolve(artifactDir).resolve(artifact + "-" + version + '.' + type);
+    }
+    //</editor-fold>
+
     //<editor-fold defaultstate="collapsed" desc="Utilities">
     /////////// Utilities ///////////////////////////////////
     // may be called once per test (always writes jar into /capsule.jar)
     private Capsule newCapsule(Jar jar) {
-        try {
-            Path capsuleJar = path("capsule.jar");
-            jar.write(capsuleJar);
-            final String mainClass = jar.getAttribute("Main-Class");
-            final Class<?> clazz = Class.forName(mainClass);
-            accessible(Capsule.class.getDeclaredField("PROFILE")).set(null, 10); // disable profiling even when log=debug
-
-            Constructor<?> ctor = accessible(clazz.getDeclaredConstructor(Path.class));
-            return (Capsule) ctor.newInstance(capsuleJar);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e.getCause());
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
+        return (Capsule) CapsuleTestUtils.newCapsule(jar, path("capsule.jar"));
     }
 
     private Jar newCapsuleJar() {
@@ -193,26 +224,6 @@ public class PomTest {
 
     private InputStream emptyInputStream() {
         return Jar.toInputStream("", UTF_8);
-    }
-
-    private static <T extends AccessibleObject> T accessible(T x) {
-        if (!x.isAccessible())
-            x.setAccessible(true);
-
-        if (x instanceof Field) {
-            Field field = (Field) x;
-            if ((field.getModifiers() & Modifier.FINAL) != 0) {
-                try {
-                    Field modifiersField = Field.class.getDeclaredField("modifiers");
-                    modifiersField.setAccessible(true);
-                    modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-                } catch (ReflectiveOperationException e) {
-                    throw new AssertionError(e);
-                }
-            }
-        }
-
-        return x;
     }
     //</editor-fold>
 }

@@ -91,6 +91,7 @@ public class DependencyManager {
     private final boolean forceRefresh;
     private final boolean offline;
     protected final RepositorySystem system;
+    private final LocalRepository localRepo;
     private RepositorySystemSession session;
     private List<RemoteRepository> repos;
     private final int logLevel;
@@ -98,7 +99,6 @@ public class DependencyManager {
 
     //<editor-fold desc="Construction and Setup">
     /////////// Construction and Setup ///////////////////////////////////
-    @SuppressWarnings("OverridableMethodCallInConstructor")
     public DependencyManager(Path localRepoPath, boolean forceRefresh, int logLevel) {
         this.logLevel = logLevel;
         this.forceRefresh = forceRefresh;
@@ -109,10 +109,9 @@ public class DependencyManager {
         log(LOG_DEBUG, "DependencyManager - Offline: " + offline);
         log(LOG_DEBUG, "DependencyManager - Local repo: " + localRepoPath);
 
-        final LocalRepository localRepo = new LocalRepository(localRepoPath.toFile());
+        this.localRepo = new LocalRepository(localRepoPath.toFile());
         this.settings = UserSettings.getInstance();
         this.system = newRepositorySystem();
-        this.session = newRepositorySession(system, localRepo);
     }
 
     public final void setRepos(List<String> repos, boolean allowSnapshots) {
@@ -167,6 +166,12 @@ public class DependencyManager {
         return locator.getService(RepositorySystem.class);
     }
 
+    public RepositorySystemSession getSession() {
+        if(session == null)
+            session = newRepositorySession(system, localRepo);
+        return session;
+    }
+
     protected RepositorySystemSession newRepositorySession(RepositorySystem system, LocalRepository localRepo) {
         final DefaultRepositorySystemSession s = MavenRepositorySystemUtils.newSession();
 
@@ -194,10 +199,10 @@ public class DependencyManager {
 
     public void setSystemProperties(Map<String, String> properties) {
         final Map<String, String> ps = Collections.unmodifiableMap(properties);
-        if (session instanceof DefaultRepositorySystemSession)
-            ((DefaultRepositorySystemSession) session).setSystemProperties(ps);
+        if (getSession() instanceof DefaultRepositorySystemSession)
+            ((DefaultRepositorySystemSession) getSession()).setSystemProperties(ps);
         else {
-            final RepositorySystemSession s = session;
+            final RepositorySystemSession s = getSession();
             this.session = new AbstractForwardingRepositorySystemSession() {
                 @Override
                 protected RepositorySystemSession getSession() {
@@ -229,7 +234,7 @@ public class DependencyManager {
 
     private void printDependencyTree(CollectRequest collectRequest, PrintStream out) {
         try {
-            CollectResult collectResult = system.collectDependencies(session, collectRequest);
+            CollectResult collectResult = system.collectDependencies(getSession(), collectRequest);
             collectResult.getRoot().accept(new ConsoleDependencyGraphDumper(out));
         } catch (DependencyCollectionException e) {
             throw new RuntimeException(e);
@@ -249,7 +254,7 @@ public class DependencyManager {
             log(LOG_DEBUG, "DependencyManager.resolve " + collectRequest);
         try {
             final DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
-            final List<ArtifactResult> artifactResults = system.resolveDependencies(session, dependencyRequest).getArtifactResults();
+            final List<ArtifactResult> artifactResults = system.resolveDependencies(getSession(), dependencyRequest).getArtifactResults();
 
             final List<Path> jars = new ArrayList<Path>();
             for (ArtifactResult artifactResult : artifactResults)
@@ -272,12 +277,12 @@ public class DependencyManager {
             final String version;
             if (isVersionRange(artifact.getVersion())) {
                 final VersionRangeRequest request = new VersionRangeRequest().setRepositories(repos).setArtifact(artifact);
-                final VersionRangeResult result = system.resolveVersionRange(session, request);
+                final VersionRangeResult result = system.resolveVersionRange(getSession(), request);
                 final Version highestVersion = result.getHighestVersion();
                 version = highestVersion != null ? highestVersion.toString() : null;
             } else {
                 final VersionRequest request = new VersionRequest().setRepositories(repos).setArtifact(artifact);
-                final VersionResult result = system.resolveVersion(session, request);
+                final VersionResult result = system.resolveVersion(getSession(), request);
                 version = result.getVersion();
             }
             if (version == null)

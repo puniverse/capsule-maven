@@ -76,19 +76,19 @@ public class MavenCapsuleTest {
 
         Capsule capsule = newCapsule(jar);
 
-        assertEquals("com.acme_foo_1.0", capsule.getAppId());
+        assertEquals("com.acme.foo_1.0", capsule.getAppId());
     }
 
     @Test
     public void testPomDependencies() throws Exception {
-        List<String> deps = list("com.acme:bar:1.2", "com.acme:baz:3.4:jdk8(org.asd:qqq,com.gogo:bad)");
+        List<String> ds = list("com.acme:bar:1.2", "com.acme:baz:3.4:jdk8(org.asd:qqq,com.gogo:bad)");
 
         Model pom = newPom();
         pom.setGroupId("com.acme");
         pom.setArtifactId("foo");
         pom.setVersion("1.0");
-        for (String dep : deps)
-            pom.addDependency(coordsToDependency(dep));
+        for (String d : ds)
+            pom.addDependency(coordsToDependency(d));
 
         Jar jar = newCapsuleJar()
                 .setAttribute("Application-Class", "com.acme.Foo")
@@ -96,7 +96,7 @@ public class MavenCapsuleTest {
                 .addEntry("pom.xml", toInputStream(pom));
 
         Capsule capsule = newCapsule(jar);
-        assert_().that(capsule.getAttribute(Capsule.ATTR_DEPENDENCIES)).has().allFrom(deps);
+        assert_().that(capsule.getAttribute(Capsule.ATTR_DEPENDENCIES)).has().allFrom(ds);
     }
 
     //<editor-fold defaultstate="collapsed" desc="POM Utilities">

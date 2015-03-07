@@ -48,8 +48,6 @@ If the `Dependencies` manifest attribute is not defined, those non-optional depe
 
 The Maven caplet changes the artifact resolution strategy of the capsule, such that artifacts that are not embedded in the capsule will be downloaded from a Maven repository. This works for any attribute that can specify artifact coordinates, including (but not limited to) `Application`, `Dependencies`, `Native-Dependencies`, `Java-Agents`, and even `Caplets`.
 
-If the `Dependencies` attribute is undefined, and
-
 By default, the caplet will look for dependencies on Maven Central. If other repositories are needed (or if you don't want to access Maven Central), the `Repositories` attribute is a space-separated list of Maven repositories formatted as `URL` or `NAME(URL)`. The repositories will be searched in the order they are listed. If the `Repositories` attribute is found in the manifest, then Maven Central will not be searched.
 
 Instead of specifying explicit URLs, the following well-known repository names can be listed in the `Repositories` attribute:

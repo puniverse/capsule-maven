@@ -1,0 +1,19 @@
+language: java
+sudo: false
+install: gradle -q assemble
+script: gradle -i check
+jdk:
+  - oraclejdk7
+  - oraclejdk8
+
+branches:
+  except:
+    - gh-pages
+
+env:
+  global:
+    - TERM=dumb
+
+notifications:
+  slack: puniverse:OsnbakHrYeTcLyalVgtUeI4F
+

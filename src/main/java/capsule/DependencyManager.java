@@ -167,7 +167,7 @@ public class DependencyManager {
     }
 
     public RepositorySystemSession getSession() {
-        if(session == null)
+        if (session == null)
             session = newRepositorySession(system, localRepo);
         return session;
     }

@@ -66,11 +66,11 @@ dependencies {
     compile("org.eclipse.aether:aether-transport-http:$aetherVer") {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
-    compile('org.apache.maven:maven-aether-provider:3.2.5') {
+    compile('org.apache.maven:maven-aether-provider:3.3.1') {
         exclude group: 'org.eclipse.aether', module: '*'
     }
-    compile 'org.apache.maven:maven-model:3.2.5'
-    compile('org.apache.maven:maven-settings-builder:3.2.5') {
+    compile 'org.apache.maven:maven-model:3.3.1'
+    compile('org.apache.maven:maven-settings-builder:3.3.1') {
         exclude group: 'org.codehaus.plexus', module: 'plexus-utils'
     }
     compile('org.codehaus.plexus:plexus-container-default:1.6') {
@@ -85,7 +85,7 @@ dependencies {
     }
     
     runtime 'com.google.guava:guava:18.0' // necessary -- unfortunately -- for maven-aether-provider
-    runtime 'org.slf4j:slf4j-nop:1.7.10'
+    runtime 'org.slf4j:slf4j-nop:1.7.12'
     
     testCompile "${group}:capsule-util:${version}"
     testCompile 'junit:junit:4.12'

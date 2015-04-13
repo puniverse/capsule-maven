@@ -81,7 +81,7 @@ final class UserSettings {
     }
 
     private static Properties getSystemProperties() {
-        Properties props = new Properties();
+        final Properties props = new Properties();
         getEnvProperties(props);
         props.putAll(System.getProperties());
         return props;
@@ -106,7 +106,7 @@ final class UserSettings {
         final DefaultProxySelector selector = new DefaultProxySelector();
 
         for (Proxy proxy : settings.getProxies()) {
-            AuthenticationBuilder auth = new AuthenticationBuilder();
+            final AuthenticationBuilder auth = new AuthenticationBuilder();
             auth.addUsername(proxy.getUsername()).addPassword(proxy.getPassword());
             selector.add(new org.eclipse.aether.repository.Proxy(proxy.getProtocol(), proxy.getHost(),
                     proxy.getPort(), auth.build()),
@@ -129,7 +129,7 @@ final class UserSettings {
         final DefaultAuthenticationSelector selector = new DefaultAuthenticationSelector();
 
         for (Server server : settings.getServers()) {
-            AuthenticationBuilder auth = new AuthenticationBuilder();
+            final AuthenticationBuilder auth = new AuthenticationBuilder();
             auth.addUsername(server.getUsername()).addPassword(server.getPassword());
             auth.addPrivateKey(server.getPrivateKey(), server.getPassphrase());
             selector.add(server.getId(), auth.build());

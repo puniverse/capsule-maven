@@ -18,7 +18,10 @@ import java.util.Map.Entry;
 import static java.util.Arrays.asList;
 import java.util.Collection;
 import static java.util.Collections.emptyList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.eclipse.aether.graph.Dependency;
 
 /**
  *
@@ -44,6 +47,9 @@ public class MavenCapsule extends Capsule {
     private PomReader pom;
     private Path localRepo;
     private String version; // app version cache
+
+    private static final List<Path> UNRESOLVED = new ArrayList<>();
+    private final Map<Dependency, List<Path>> dependencies = new HashMap<>();
 
     //<editor-fold defaultstate="collapsed" desc="Constructors">
     /////////// Constructors ///////////////////////////////////
@@ -76,30 +82,24 @@ public class MavenCapsule extends Capsule {
             if (isDependency(appArtifact))
                 getDependencyManager().printDependencyTree(appArtifact, "jar", STDOUT);
         } else {
-            final List<String> deps = getAllDependencies();
-            if (deps.isEmpty())
+            getAllDependencies();
+            if (dependencies.isEmpty())
                 STDOUT.println("No external dependencies.");
             else
-                getDependencyManager().printDependencyTree(deps, "jar", STDOUT);
-        }
-
-        final List<String> nativeDeps = getAllNativeDependencies();
-        if (!nativeDeps.isEmpty()) {
-            STDOUT.println("\nNative Dependencies:");
-            getDependencyManager().printDependencyTree(nativeDeps, getNativeLibExtension(), STDOUT);
+                getDependencyManager().printDependencyTree(getUnresolved(), STDOUT);
         }
     }
 
     void resolve(List<String> args) throws IOException, InterruptedException {
         verifyNonEmpty("Cannot resolve a wrapper capsule.");
 
-        final List<String> deps = new ArrayList<>();
-        deps.add(getAttribute(ATTR_APP_ARTIFACT));
-        addAllIfAbsent(deps, getAllDependencies());
-        resolveDependencies(deps, "jar");
+        if (hasAttribute(ATTR_APP_ARTIFACT)) {
+            final String appArtifact = getAttribute(ATTR_APP_ARTIFACT);
+            lookup(appArtifact);
+        }
+        getAllDependencies();
 
-        resolveDependencies(getAllNativeDependencies(), getNativeLibExtension());
-
+        getDependencyManager().resolveDependencies(getUnresolved());
         log(LOG_QUIET, "Capsule resolved");
     }
 
@@ -108,31 +108,26 @@ public class MavenCapsule extends Capsule {
             throw new IllegalArgumentException(message);
     }
 
-    private List<String> getAllDependencies() {
-        final List<String> deps = new ArrayList<>();
-        for (Collection<String> xs : asList(
-                getAttribute(ATTR_DEPENDENCIES),
-                getAttribute(ATTR_NATIVE_DEPENDENCIES).keySet(),
-                getAttribute(ATTR_APP_CLASS_PATH),
-                getAttribute(ATTR_BOOT_CLASS_PATH),
-                getAttribute(ATTR_BOOT_CLASS_PATH_P),
-                getAttribute(ATTR_BOOT_CLASS_PATH_A),
-                getAttribute(ATTR_JAVA_AGENTS).keySet(),
-                getAttribute(ATTR_NATIVE_AGENTS).keySet()))
-            addAllIfAbsent(deps, nullToEmpty(filterArtifacts(xs)));
-
-        return deps;
+    private void getAllDependencies() {
+        for (Map.Entry<String, ?> attr : asList(
+                ATTR_DEPENDENCIES,
+                ATTR_NATIVE_DEPENDENCIES,
+                ATTR_APP_CLASS_PATH,
+                ATTR_BOOT_CLASS_PATH,
+                ATTR_BOOT_CLASS_PATH_P,
+                ATTR_BOOT_CLASS_PATH_A,
+                ATTR_JAVA_AGENTS,
+                ATTR_NATIVE_AGENTS))
+            getAttribute(attr);
     }
 
-    private List<String> getAllNativeDependencies() {
-        final List<String> deps = new ArrayList<>();
-        for (Collection<String> xs : asList(getAttribute(ATTR_NATIVE_DEPENDENCIES).keySet(), getAttribute(ATTR_NATIVE_AGENTS).keySet())) {
-            for (String x : xs) {
-                if (isDependency(x))
-                    deps.add(x);
-            }
+    private List<Dependency> getUnresolved() {
+        final List<Dependency> unresolved = new ArrayList<>();
+        for (Map.Entry<Dependency, List<Path>> e : dependencies.entrySet()) {
+            if (e.getValue() == UNRESOLVED)
+                unresolved.add(e.getKey());
         }
-        return deps;
+        return unresolved;
     }
     //</editor-fold>
 
@@ -161,9 +156,12 @@ public class MavenCapsule extends Capsule {
         }
 
         if (ATTR_DEPENDENCIES == attr) {
-            List<String> deps = super.attribute(ATTR_DEPENDENCIES);
-            if ((deps == null || deps.isEmpty()) && pom != null)
-                deps = pom.getDependencies();
+            List<Object> deps = super.attribute(ATTR_DEPENDENCIES);
+            if ((deps == null || deps.isEmpty()) && pom != null) {
+                deps = new ArrayList<>();
+                for (String[] d : pom.getDependencies())
+                    deps.add(lookup(d[0], d[1]));
+            }
             return (T) deps;
         }
 
@@ -180,46 +178,30 @@ public class MavenCapsule extends Capsule {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    protected List<Path> resolveDependencies(List<String> dependencies, String type) {
-        if (dependencies == null)
-            return null;
-
-        final List<Path> res = new ArrayList<>();
-        final List<String> deps = new ArrayList<>();
-        for (String dep : dependencies) {
-            try {
-                List<Path> r = super.resolveDependency(dep, type);
-                if (r != null) {
-                    res.addAll(r);
-                    continue;
-                }
-            } catch (IllegalStateException e) {
-            }
-            deps.add(dep);
-        }
-
-        res.addAll(getDependencyManager().resolveDependencies(deps, type));
-        return emptyToNull(res);
+    protected List<Path> resolve0(Object x) {
+        if (x instanceof Dependency) {
+            final Dependency d = (Dependency) x;
+            if (dependencies.get(d) == UNRESOLVED)
+                dependencies.putAll(getDependencyManager().resolveDependencies(getUnresolved()));
+            assert dependencies.get(d) != UNRESOLVED : d;
+            return dependencies.get(d);
+        } else
+            return super.resolve0(x); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    protected List<Path> resolveDependency(String coords, String type) {
-        if (coords == null)
-            return null;
-
-        try {
-            List<Path> res = super.resolveDependency(coords, type);
-            if (res != null && !res.isEmpty())
-                return res;
-        } catch (IllegalStateException e) {
+    protected Object lookup0(String x, String type) {
+        Object res = super.lookup0(x, type);
+        if (res == null && isDependency(x)) {
+            final Dependency dep = DependencyManager.toDependency(x, type);
+            if (!dependencies.containsKey(dep))
+                dependencies.put(dep, UNRESOLVED);
+            return dep;
         }
-
-        return getDependencyManager().resolveDependency(coords, type);
+        return res;
     }
-    //</editor-fold>
 
+    //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="Internal Methods">
     /////////// Internal Methods ///////////////////////////////////
     private PomReader createPomReader() {
@@ -286,17 +268,6 @@ public class MavenCapsule extends Capsule {
             localRepo = repo;
         }
         return localRepo;
-    }
-
-    private static List<String> filterArtifacts(Collection<String> xs) {
-        if (xs == null)
-            return null;
-        final List<String> res = new ArrayList<>();
-        for (String x : xs) {
-            if (isDependency(x))
-                res.add(x);
-        }
-        return res;
     }
 
     private static boolean isDependency(String lib) {

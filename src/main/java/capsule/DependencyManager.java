@@ -35,6 +35,8 @@ import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.collection.DependencyCollectionException;
 import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.graph.DependencyVisitor;
 import org.eclipse.aether.graph.Exclusion;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
@@ -43,6 +45,7 @@ import org.eclipse.aether.repository.RepositoryPolicy;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.resolution.VersionRequest;
@@ -188,6 +191,8 @@ public class DependencyManager {
         s.setMirrorSelector(settings.getMirrorSelector());
         s.setAuthenticationSelector(settings.getAuthSelector());
 
+        s.setDependencyGraphTransformer(newConflicResolver());
+
         if (logLevel > LOG_NONE) {
             final PrintStream out = prefixStream(System.err, LOG_PREFIX);
             s.setTransferListener(new ConsoleTransferListener(isLogging(LOG_VERBOSE), out));
@@ -195,6 +200,14 @@ public class DependencyManager {
         }
 
         return s;
+    }
+
+    private static ConflictResolver newConflicResolver() {
+        return new ConflictResolver(
+                new org.eclipse.aether.util.graph.transformer.NearestVersionSelector(),
+                new org.eclipse.aether.util.graph.transformer.JavaScopeSelector(),
+                new org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector(),
+                new org.eclipse.aether.util.graph.transformer.JavaScopeDeriver());
     }
 
     public void setSystemProperties(Map<String, String> properties) {
@@ -225,7 +238,11 @@ public class DependencyManager {
     }
 
     public final void printDependencyTree(List<String> coords, String type, PrintStream out) {
-        printDependencyTree(collect().setDependencies(toDependencies(coords, type)), out);
+        printDependencyTree(toDependencies(coords, type), out);
+    }
+
+    public final void printDependencyTree(List<Dependency> deps, PrintStream out) {
+        printDependencyTree(collect().setDependencies(deps), out);
     }
 
     public final void printDependencyTree(String coords, String type, PrintStream out) {
@@ -249,22 +266,57 @@ public class DependencyManager {
         return resolve(collect().setRoot(toDependency(coords, type))); // resolveDependencies(Collections.singletonList(coords), type);
     }
 
+    public final Map<Dependency, List<Path>> resolveDependencies(List<Dependency> deps) {
+        final Map<Dependency, List<Path>> resolved = new HashMap<>();
+
+        for (DependencyNode dn : resolve0(collect().setDependencies(deps)).getRoot().getChildren()) {
+            final List<Path> jars = new ArrayList<>();
+            resolved.put(clean(dn.getDependency()), jars);
+            dn.accept(new DependencyVisitor() {
+                @Override
+                public boolean visitEnter(DependencyNode node) {
+                    jars.add(path(node.getArtifact()));
+                    return true;
+                }
+
+                @Override
+                public boolean visitLeave(DependencyNode node) {
+                    return true;
+                }
+            });
+        }
+        return resolved;
+    }
+
+    private Dependency clean(Dependency d) { // necessary for dependency equality
+        final Artifact a = d.getArtifact();
+        return new Dependency(new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()),
+                d.getScope(), d.getOptional(), d.getExclusions());
+    }
+
     protected List<Path> resolve(CollectRequest collectRequest) {
+        final List<Path> jars = new ArrayList<>();
+        for (ArtifactResult artifactResult : resolve0(collectRequest).getArtifactResults())
+            jars.add(path(artifactResult.getArtifact()));
+        return jars;
+    }
+
+    protected DependencyResult resolve0(CollectRequest collectRequest) {
         if (isLogging(LOG_DEBUG))
             log(LOG_DEBUG, "DependencyManager.resolve " + collectRequest);
         try {
             final DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
-            final List<ArtifactResult> artifactResults = system.resolveDependencies(getSession(), dependencyRequest).getArtifactResults();
-
-            final List<Path> jars = new ArrayList<Path>();
-            for (ArtifactResult artifactResult : artifactResults)
-                jars.add(artifactResult.getArtifact().getFile().toPath().toAbsolutePath());
+            final DependencyResult result = system.resolveDependencies(getSession(), dependencyRequest);
             if (isLogging(LOG_DEBUG))
-                log(LOG_DEBUG, "DependencyManager.resolve: " + jars);
-            return jars;
+                log(LOG_DEBUG, "DependencyManager.resolve: " + result);
+            return result;
         } catch (DependencyResolutionException e) {
             throw new RuntimeException("Error resolving dependencies.", e);
         }
+    }
+
+    private static Path path(Artifact artifact) {
+        return artifact.getFile().toPath().toAbsolutePath();
     }
 
     public final String getLatestVersion(String coords, String type) {
@@ -292,15 +344,11 @@ public class DependencyManager {
             throw new RuntimeException(e);
         }
     }
-
-    private static boolean isVersionRange(String version) {
-        return version.startsWith("(") || version.startsWith("[");
-    }
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Parsing">
     /////////// Parsing ///////////////////////////////////
-    protected final static Dependency toDependency(String coords, String type) {
+    public final static Dependency toDependency(String coords, String type) {
         return new Dependency(coordsToArtifact(coords, type), JavaScopes.RUNTIME, false, getExclusions(coords));
     }
 
@@ -318,9 +366,13 @@ public class DependencyManager {
                 + ((artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) ? (":" + artifact.getClassifier()) : "");
     }
 
+    private static boolean isVersionRange(String version) {
+        return version.startsWith("(") || version.startsWith("[");
+    }
+
     private static final Pattern PAT_DEPENDENCY = Pattern.compile("(?<groupId>[^:\\(]+):(?<artifactId>[^:\\(]+)(:(?<version>\\(?[^:\\(]*))?(:(?<classifier>[^:\\(]+))?(\\((?<exclusions>[^\\(\\)]*)\\))?");
 
-    private static Artifact coordsToArtifact(final String depString, String type) {
+    private static Artifact coordsToArtifact(String depString, String type) {
         final Matcher m = PAT_DEPENDENCY.matcher(depString);
         if (!m.matches())
             throw new IllegalArgumentException("Could not parse dependency: " + depString);

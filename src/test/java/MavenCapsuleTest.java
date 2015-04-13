@@ -96,7 +96,8 @@ public class MavenCapsuleTest {
                 .addEntry("pom.xml", toInputStream(pom));
 
         Capsule capsule = newCapsule(jar);
-        assert_().that(capsule.getAttribute(Capsule.ATTR_DEPENDENCIES)).has().allFrom(ds);
+        for (String d : ds)
+            assert_().that(capsule.getAttribute(Capsule.ATTR_DEPENDENCIES)).has().item(DependencyManager.toDependency(d, "jar"));
     }
 
     //<editor-fold defaultstate="collapsed" desc="POM Utilities">

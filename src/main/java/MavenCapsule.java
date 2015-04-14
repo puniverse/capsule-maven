@@ -207,7 +207,7 @@ public class MavenCapsule extends Capsule {
         return res;
     }
     //</editor-fold>
-    
+
     //<editor-fold defaultstate="collapsed" desc="Internal Methods">
     /////////// Internal Methods ///////////////////////////////////
     private PomReader createPomReader() {
@@ -346,7 +346,7 @@ public class MavenCapsule extends Capsule {
         }
         return list;
     }
-    
+
     private static <T extends AccessibleObject> T accessible(T obj) {
         if (obj == null)
             return null;

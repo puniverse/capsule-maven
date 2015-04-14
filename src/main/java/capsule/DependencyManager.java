@@ -126,7 +126,7 @@ public class DependencyManager {
             RepositoryPolicy releasePolicy = maketReleasePolicy(r);
             RepositoryPolicy snapshotPolicy = allowSnapshots ? maketSnapshotPolicy(r) : new RepositoryPolicy(false, null, null);
 
-            RemoteRepository repo = createRepo(r, releasePolicy, snapshotPolicy);
+            final RemoteRepository repo = createRepo(r, releasePolicy, snapshotPolicy);
             if (!rs.contains(repo))
                 rs.add(repo);
         }
@@ -413,7 +413,7 @@ public class DependencyManager {
         if (!m.matches())
             throw new IllegalArgumentException("Could not parse repository: " + repo);
 
-        String id = m.group("id");
+        final String id = m.group("id");
         String url = m.group("url");
         if (url == null && WELL_KNOWN_REPOS.containsKey(id))
             return createRepo(WELL_KNOWN_REPOS.get(id), releasePolicy, snapshotPolicy);

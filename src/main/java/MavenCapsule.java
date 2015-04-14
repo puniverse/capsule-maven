@@ -10,6 +10,7 @@ import capsule.DependencyManager;
 import capsule.PomReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.AccessibleObject;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,7 +83,7 @@ public class MavenCapsule extends Capsule {
             if (isDependency(appArtifact))
                 getDependencyManager().printDependencyTree(appArtifact, "jar", STDOUT);
         } else {
-            getAllDependencies();
+            lookupAllDependencies();
             if (dependencies.isEmpty())
                 STDOUT.println("No external dependencies.");
             else
@@ -97,7 +98,7 @@ public class MavenCapsule extends Capsule {
             final String appArtifact = getAttribute(ATTR_APP_ARTIFACT);
             lookup(appArtifact);
         }
-        getAllDependencies();
+        lookupAllDependencies();
 
         getDependencyManager().resolveDependencies(getUnresolved());
         log(LOG_QUIET, "Capsule resolved");
@@ -108,17 +109,22 @@ public class MavenCapsule extends Capsule {
             throw new IllegalArgumentException(message);
     }
 
-    private void getAllDependencies() {
-        for (Map.Entry<String, ?> attr : asList(
-                ATTR_DEPENDENCIES,
-                ATTR_NATIVE_DEPENDENCIES,
-                ATTR_APP_CLASS_PATH,
-                ATTR_BOOT_CLASS_PATH,
-                ATTR_BOOT_CLASS_PATH_P,
-                ATTR_BOOT_CLASS_PATH_A,
-                ATTR_JAVA_AGENTS,
-                ATTR_NATIVE_AGENTS))
-            getAttribute(attr);
+    private void lookupAllDependencies() {
+        try {
+            accessible(Capsule.class.getDeclaredMethod("lookupAllDependencies")).invoke(this);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+//        for (Map.Entry<String, ?> attr : asList(
+//                ATTR_DEPENDENCIES,
+//                ATTR_NATIVE_DEPENDENCIES,
+//                ATTR_APP_CLASS_PATH,
+//                ATTR_BOOT_CLASS_PATH,
+//                ATTR_BOOT_CLASS_PATH_P,
+//                ATTR_BOOT_CLASS_PATH_A,
+//                ATTR_JAVA_AGENTS,
+//                ATTR_NATIVE_AGENTS))
+//            getAttribute(attr);
     }
 
     private List<Dependency> getUnresolved() {
@@ -131,7 +137,7 @@ public class MavenCapsule extends Capsule {
     }
     //</editor-fold>
 
-    //<editor-fold defaultstate="collapsed" desc="Capsule Overrides">
+    //<editor-fold desc="Capsule Overrides">
     /////////// Capsule Overrides ///////////////////////////////////
     @Override
     @SuppressWarnings("unchecked")
@@ -200,8 +206,8 @@ public class MavenCapsule extends Capsule {
         }
         return res;
     }
-
     //</editor-fold>
+    
     //<editor-fold defaultstate="collapsed" desc="Internal Methods">
     /////////// Internal Methods ///////////////////////////////////
     private PomReader createPomReader() {
@@ -339,6 +345,13 @@ public class MavenCapsule extends Capsule {
                 list.add(e);
         }
         return list;
+    }
+    
+    private static <T extends AccessibleObject> T accessible(T obj) {
+        if (obj == null)
+            return null;
+        obj.setAccessible(true);
+        return obj;
     }
     //</editor-fold>
 }

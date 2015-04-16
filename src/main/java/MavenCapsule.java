@@ -142,14 +142,14 @@ public class MavenCapsule extends Capsule {
     @Override
     @SuppressWarnings("unchecked")
     protected <T> T attribute(Entry<String, T> attr) {
-        if (ATTR_APP_ID == attr) {
+        if (ATTR_APP_ID.equals(attr)) {
             String id = super.attribute(ATTR_APP_ID);
             if (id == null && pom != null)
                 id = pom.getGroupId() + "." + pom.getArtifactId();
             return (T) id;
         }
 
-        if (ATTR_APP_VERSION == attr) {
+        if (ATTR_APP_VERSION.equals(attr)) {
             String ver = super.attribute(ATTR_APP_VERSION);
             if (ver == null && version != null)
                 ver = version;
@@ -161,17 +161,17 @@ public class MavenCapsule extends Capsule {
             return (T) ver;
         }
 
-        if (ATTR_DEPENDENCIES == attr) {
+        if (ATTR_DEPENDENCIES.equals(attr)) {
             List<Object> deps = super.attribute(ATTR_DEPENDENCIES);
             if ((deps == null || deps.isEmpty()) && pom != null) {
                 deps = new ArrayList<>();
                 for (String[] d : pom.getDependencies())
-                    deps.add(lookup(d[0], d[1]));
+                    deps.add(lookup(d[0], d[1], ATTR_DEPENDENCIES, null));
             }
             return (T) deps;
         }
 
-        if (ATTR_REPOSITORIES == attr) {
+        if (ATTR_REPOSITORIES.equals(attr)) {
             final List<String> repos = new ArrayList<String>();
             repos.addAll(nullToEmpty(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*")));
             repos.addAll(super.attribute(ATTR_REPOSITORIES));
@@ -187,8 +187,11 @@ public class MavenCapsule extends Capsule {
     protected List<Path> resolve0(Object x) {
         if (x instanceof Dependency) {
             final Dependency d = (Dependency) x;
-            if (dependencies.get(d) == UNRESOLVED)
-                dependencies.putAll(getDependencyManager().resolveDependencies(getUnresolved()));
+            if (dependencies.get(d) == UNRESOLVED) {
+                Map<Dependency, List<Path>> resolved = getDependencyManager().resolveDependencies(getUnresolved());
+                log(LOG_DEBUG, "Maven resolved: " + resolved);
+                dependencies.putAll(resolved);
+            }
             assert dependencies.get(d) != UNRESOLVED : d;
             return dependencies.get(d);
         } else
@@ -196,13 +199,17 @@ public class MavenCapsule extends Capsule {
     }
 
     @Override
-    protected Object lookup0(String x, String type) {
-        Object res = super.lookup0(x, type);
-        if (res == null && isDependency(x)) {
-            final Dependency dep = DependencyManager.toDependency(x, type);
-            if (!dependencies.containsKey(dep))
-                dependencies.put(dep, UNRESOLVED);
-            return dep;
+    protected <T> Object lookup0(Object x, String type, Entry<String, T> attrContext, Object context) {
+        final Object res = super.lookup0(x, type, attrContext, context);
+
+        if (res == null && x instanceof String) {
+            final String s = (String) x;
+            if (isDependency(s)) {
+                final Dependency dep = DependencyManager.toDependency(s, type);
+                if (!dependencies.containsKey(dep))
+                    dependencies.put(dep, UNRESOLVED);
+                return super.lookup0(dep, type, attrContext, context);
+            }
         }
         return res;
     }

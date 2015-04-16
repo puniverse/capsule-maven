@@ -269,8 +269,15 @@ public class DependencyManager {
     public final Map<Dependency, List<Path>> resolveDependencies(List<Dependency> deps) {
         final Map<Dependency, List<Path>> resolved = new HashMap<>();
 
-        for (DependencyNode dn : resolve0(collect().setDependencies(deps)).getRoot().getChildren()) {
+        final List<DependencyNode> children = resolve0(collect().setDependencies(deps)).getRoot().getChildren();
+//        if (children.size() != deps.size())
+//            throw new AssertionError("deps: " + deps + " -> " + children);
+
+        for (DependencyNode dn : children) {
             final List<Path> jars = new ArrayList<>();
+
+//            if(!equalExceptVersion(deps.get(i).getArtifact(), dn.getArtifact()))
+//                throw new AssertionError();
             resolved.put(clean(dn.getDependency()), jars);
             dn.accept(new DependencyVisitor() {
                 @Override
@@ -288,10 +295,20 @@ public class DependencyManager {
         return resolved;
     }
 
-    private Dependency clean(Dependency d) { // necessary for dependency equality
+    private Dependency clean(Dependency d) {
+        // necessary for dependency equality
+        // SNAPSHOT dependencies get resolved to specific artifacts, so returned dependency is different from original
         final Artifact a = d.getArtifact();
-        return new Dependency(new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()),
+        return new Dependency(new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getBaseVersion()),
                 d.getScope(), d.getOptional(), d.getExclusions());
+    }
+
+    private boolean equalExceptVersion(Artifact a, Artifact b) {
+        return Objects.equals(a.getGroupId(), b.getGroupId())
+                && Objects.equals(a.getArtifactId(), b.getArtifactId())
+                && Objects.equals(a.getExtension(), b.getExtension())
+                && Objects.equals(a.getClassifier(), b.getClassifier())
+                && Objects.equals(a.getBaseVersion(), b.getBaseVersion());
     }
 
     protected List<Path> resolve(CollectRequest collectRequest) {

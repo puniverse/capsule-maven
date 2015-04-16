@@ -184,22 +184,7 @@ public class MavenCapsule extends Capsule {
     }
 
     @Override
-    protected List<Path> resolve0(Object x) {
-        if (x instanceof Dependency) {
-            final Dependency d = (Dependency) x;
-            if (dependencies.get(d) == UNRESOLVED) {
-                Map<Dependency, List<Path>> resolved = getDependencyManager().resolveDependencies(getUnresolved());
-                log(LOG_DEBUG, "Maven resolved: " + resolved);
-                dependencies.putAll(resolved);
-            }
-            assert dependencies.get(d) != UNRESOLVED : d;
-            return dependencies.get(d);
-        } else
-            return super.resolve0(x); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    protected <T> Object lookup0(Object x, String type, Entry<String, T> attrContext, Object context) {
+    protected Object lookup0(Object x, String type, Entry<String, ?> attrContext, Object context) {
         final Object res = super.lookup0(x, type, attrContext, context);
 
         if (res == null && x instanceof String) {
@@ -212,6 +197,22 @@ public class MavenCapsule extends Capsule {
             }
         }
         return res;
+    }
+
+    @Override
+    protected List<Path> resolve0(Object x) {
+        if (x instanceof Dependency) {
+            final Dependency d = (Dependency) x;
+            if (dependencies.get(d) == UNRESOLVED) {
+                Map<Dependency, List<Path>> resolved = getDependencyManager().resolveDependencies(getUnresolved());
+                log(LOG_DEBUG, "Maven resolved: " + resolved);
+                dependencies.putAll(resolved);
+            }
+            assert dependencies.get(d) != UNRESOLVED : d;
+            x = dependencies.get(d);
+            return resolve(x);
+        }
+        return super.resolve0(x);
     }
     //</editor-fold>
 

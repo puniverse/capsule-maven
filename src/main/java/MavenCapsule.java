@@ -35,6 +35,9 @@ public class MavenCapsule extends Capsule {
     private static final String PROP_RESET = "capsule.reset";
     private static final String PROP_USER_HOME = "user.home";
 
+    private static final String PROP_PROFILE = "capsule.profile";
+    private static final int PROFILE = emptyOrTrue(System.getProperty(PROP_PROFILE)) ? LOG_QUIET : LOG_DEBUG;
+
     private static final Entry<String, List<String>> ATTR_REPOSITORIES = ATTRIBUTE("Repositories", T_LIST(T_STRING()), asList("central"), true, "A list of Maven repositories, each formatted as URL or NAME(URL)");
     private static final Entry<String, Boolean> ATTR_ALLOW_SNAPSHOTS = ATTRIBUTE("Allow-Snapshots", T_BOOL(), false, true, "Whether or not SNAPSHOT dependencies are allowed");
 
@@ -204,9 +207,11 @@ public class MavenCapsule extends Capsule {
         if (x instanceof Dependency) {
             final Dependency d = (Dependency) x;
             if (dependencies.get(d) == UNRESOLVED) {
+                long start = clock();
                 Map<Dependency, List<Path>> resolved = getDependencyManager().resolveDependencies(getUnresolved());
                 log(LOG_DEBUG, "Maven resolved: " + resolved);
                 dependencies.putAll(resolved);
+                time("resolveAll", start);
             }
             assert dependencies.get(d) != UNRESOLVED : d;
             x = dependencies.get(d);
@@ -292,7 +297,10 @@ public class MavenCapsule extends Capsule {
     //<editor-fold defaultstate="collapsed" desc="Utils">
     /////////// Utils ///////////////////////////////////
     private static boolean systemPropertyEmptyOrTrue(String property) {
-        final String value = getProperty(property);
+        return emptyOrTrue(getProperty(property));
+    }
+
+    private static boolean emptyOrTrue(String value) {
         if (value == null)
             return false;
         return value.isEmpty() || Boolean.parseBoolean(value);
@@ -360,6 +368,19 @@ public class MavenCapsule extends Capsule {
             return null;
         obj.setAccessible(true);
         return obj;
+    }
+
+    private static long clock() {
+        return isLogging(PROFILE) ? System.nanoTime() : 0;
+    }
+
+    private static void time(String op, long start) {
+        time(op, start, isLogging(PROFILE) ? System.nanoTime() : 0);
+    }
+
+    private static void time(String op, long start, long stop) {
+        if (isLogging(PROFILE))
+            log(PROFILE, "PROFILE " + op + " " + ((stop - start) / 1_000_000) + "ms");
     }
     //</editor-fold>
 }

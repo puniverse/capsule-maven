@@ -138,6 +138,7 @@ task proguard(type: proguard.gradle.ProGuardTask, dependsOn:[shadowJar]) {
     libraryjars "${System.getProperty('java.home')}/lib/rt.jar"
     keep "class ${caplet} { *; }"
     keep "class Capsule { *; }"
+    keep "class capsule.Dependencies { *; }"
     keepclassmembers 'enum * {**[] $VALUES;public static **[] values();public static ** valueOf(java.lang.String);}'
     keep 'class capsule.org.eclipse.aether.AbstractForwardingRepositorySystemSession { *; }'
     dontoptimize

@@ -93,7 +93,7 @@ public class SystemProxySelector implements ProxySelector {
 
         // dump proxy information to logger
         if( isLogging(LOG_VERBOSE) )
-            log(logLevel, String.format("Adding `%s` proxy: %s [from system environment]", type, proxy));
+            log(LOG_VERBOSE, String.format("Adding `%s` proxy: %s [from system environment]", type, proxy));
 
     }
 
@@ -120,7 +120,7 @@ public class SystemProxySelector implements ProxySelector {
 
         // dump proxy information to logger
         if( isLogging(LOG_VERBOSE) )
-            log(logLevel, String.format("Adding `%s` proxy: %s [from Java system properties]", type, proxy));
+            log(LOG_VERBOSE, String.format("Adding `%s` proxy: %s [from Java system properties]", type, proxy));
     }
 
     /**

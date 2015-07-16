@@ -187,7 +187,8 @@ public class DependencyManager {
 
         s.setLocalRepositoryManager(system.newLocalRepositoryManager(s, localRepo));
 
-        s.setProxySelector(settings.getProxySelector());
+        SystemProxySelector sysProxySelector = new SystemProxySelector(logLevel);
+        s.setProxySelector(sysProxySelector.isValid() ? sysProxySelector : settings.getProxySelector());
         s.setMirrorSelector(settings.getMirrorSelector());
         s.setAuthenticationSelector(settings.getAuthSelector());
 

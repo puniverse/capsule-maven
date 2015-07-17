@@ -8,6 +8,8 @@
  */
 package capsule;
 
+import static java.util.Collections.unmodifiableMap;
+
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,13 +17,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import static java.util.Collections.unmodifiableMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
 import org.eclipse.aether.ConfigurationProperties;
@@ -40,6 +42,8 @@ import org.eclipse.aether.graph.DependencyVisitor;
 import org.eclipse.aether.graph.Exclusion;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.Proxy;
+import org.eclipse.aether.repository.ProxySelector;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.RepositoryPolicy;
 import org.eclipse.aether.resolution.ArtifactResult;
@@ -126,7 +130,14 @@ public class DependencyManager {
             RepositoryPolicy releasePolicy = maketReleasePolicy(r);
             RepositoryPolicy snapshotPolicy = allowSnapshots ? maketSnapshotPolicy(r) : new RepositoryPolicy(false, null, null);
 
-            final RemoteRepository repo = createRepo(r, releasePolicy, snapshotPolicy);
+            RemoteRepository repo = createRepo(r, releasePolicy, snapshotPolicy);
+            ProxySelector selector = getSession().getProxySelector();
+            Proxy proxy = selector.getProxy(repo);
+            if( proxy != null ) {
+                if( isLogging(LOG_DEBUG)) log(LOG_DEBUG, String.format("Setting proxy: '%s' for dependency: %s", proxy, repo));
+                repo = new RemoteRepository.Builder(repo).setProxy(proxy).build();
+            }
+
             if (!rs.contains(repo))
                 rs.add(repo);
         }
@@ -187,7 +198,8 @@ public class DependencyManager {
 
         s.setLocalRepositoryManager(system.newLocalRepositoryManager(s, localRepo));
 
-        s.setProxySelector(settings.getProxySelector());
+        SystemProxySelector sysProxySelector = new SystemProxySelector(logLevel);
+        s.setProxySelector(sysProxySelector.isValid() ? sysProxySelector : settings.getProxySelector());
         s.setMirrorSelector(settings.getMirrorSelector());
         s.setAuthenticationSelector(settings.getAuthSelector());
 

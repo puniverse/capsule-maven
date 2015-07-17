@@ -139,12 +139,9 @@ public class SystemProxySelectorTest {
 
     @Test
     public void testParseProxy() {
-
-        assertArrayEquals(new String[] {"foo.bar.org", "81"}, SystemProxySelector.parseProxy("foo.bar.org", "81"));
+        assertArrayEquals(new String[]{"foo.bar.org", "81"}, SystemProxySelector.parseProxy("foo.bar.org", "81"));
         assertArrayEquals(new String[]{"foo.bar.org", "8080"}, SystemProxySelector.parseProxy("foo.bar.org:8080", "91"));
-        assertArrayEquals(new String[] {"foo.com", "81"}, SystemProxySelector.parseProxy("http://foo.com", "81"));
+        assertArrayEquals(new String[]{"foo.com", "81"}, SystemProxySelector.parseProxy("http://foo.com", "81"));
         assertArrayEquals(new String[]{"foo.com", "8080"}, SystemProxySelector.parseProxy("http://foo.com:8080", "81"));
-
     }
-
 }

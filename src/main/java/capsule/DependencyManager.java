@@ -133,8 +133,9 @@ public class DependencyManager {
             RemoteRepository repo = createRepo(r, releasePolicy, snapshotPolicy);
             ProxySelector selector = getSession().getProxySelector();
             Proxy proxy = selector.getProxy(repo);
-            if( proxy != null ) {
-                if( isLogging(LOG_DEBUG)) log(LOG_DEBUG, String.format("Setting proxy: '%s' for dependency: %s", proxy, repo));
+            if (proxy != null) {
+                if (isLogging(LOG_DEBUG))
+                    log(LOG_DEBUG, String.format("Setting proxy: '%s' for dependency: %s", proxy, repo));
                 repo = new RemoteRepository.Builder(repo).setProxy(proxy).build();
             }
 

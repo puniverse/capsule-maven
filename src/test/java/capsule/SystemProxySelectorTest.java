@@ -1,5 +1,6 @@
 package capsule;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -134,6 +135,16 @@ public class SystemProxySelectorTest {
         assertEquals("http", proxy.getType());
         assertEquals("prop1.host.name", proxy.getHost());
         assertEquals(8081, proxy.getPort());
+    }
+
+    @Test
+    public void testParseProxy() {
+
+        assertArrayEquals(new String[] {"foo.bar.org", "81"}, SystemProxySelector.parseProxy("foo.bar.org", "81"));
+        assertArrayEquals(new String[]{"foo.bar.org", "8080"}, SystemProxySelector.parseProxy("foo.bar.org:8080", "91"));
+        assertArrayEquals(new String[] {"foo.com", "81"}, SystemProxySelector.parseProxy("http://foo.com", "81"));
+        assertArrayEquals(new String[]{"foo.com", "8080"}, SystemProxySelector.parseProxy("http://foo.com:8080", "81"));
+
     }
 
 }

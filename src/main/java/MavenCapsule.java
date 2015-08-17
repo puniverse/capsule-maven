@@ -193,7 +193,7 @@ public class MavenCapsule extends Capsule {
         if (res == null && x instanceof String) {
             final String s = (String) x;
             if (isDependency(s)) {
-                final Dependency dep = DependencyManager.toDependency(s, type);
+                final Dependency dep = DependencyManager.toDependency(s, type.isEmpty() ? "jar" : type);
                 if (!dependencies.containsKey(dep))
                     dependencies.put(dep, UNRESOLVED);
                 return super.lookup0(dep, type, attrContext, context);

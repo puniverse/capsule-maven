@@ -95,20 +95,11 @@ dependencies {
     testCompile 'org.mockito:mockito-all:1.10.19'
 }
 
-jar {
-    manifest {
-        attributes(
-	    'Main-Class'  : 'Capsule',
-            'Caplets'     : 'MavenCapsule'
-        )
-    }
-}
-
 shadowJar {
     outputs.upToDateWhen { false }
         
     // artifactAttached = false
-    classifier = 'shadow'
+    classifier = '' // overwrite jar
     destinationDir = file("$buildDir/libs")
 
     dependencies { exclude(dependency('co.paralleluniverse:capsule:.*')) }
@@ -126,9 +117,11 @@ shadowJar {
     relocate 'io.', 'capsule.io.'
     relocate 'com.', 'capsule.com.'
             
-    doLast {
-        logger.info("$buildDir/libs/${project.name}-${project.version}-shadow.jar -> $buildDir/libs/${project.name}-${project.version}.jar")
-        file("$buildDir/libs/${project.name}-${version}-shadow.jar").renameTo(file("$buildDir/libs/${project.name}-${project.version}.jar"))
+    manifest {
+        attributes(
+	    'Main-Class'  : 'Capsule',
+            'Caplets'     : 'MavenCapsule'
+        )
     }
 }
 
@@ -249,7 +242,7 @@ uploadArchives {
     }
 }
 
-[build, install, signArchives, uploadArchives]*.dependsOn proguard
+[assemble, build, install, signArchives, uploadArchives]*.dependsOn proguard
 
     
 install.repositories.mavenInstaller {

@@ -209,8 +209,8 @@ uploadArchives {
 
             repository(
                 url: (isReleaseVersion ?
-	                        "https://oss.sonatype.org/service/local/staging/deploy/maven2" :
-	                        "https://oss.sonatype.org/content/repositories/snapshots")) {
+                        "https://oss.sonatype.org/service/local/staging/deploy/maven2" :
+                        "https://oss.sonatype.org/content/repositories/snapshots")) {
                 // User and Password are taken from ~/.gradle/gradle.properties
                 authentication(userName: project.sonatypeUsername, password: project.sonatypePassword)
             }
@@ -244,7 +244,6 @@ uploadArchives {
 
 [assemble, build, install, signArchives, uploadArchives]*.dependsOn proguard
 
-    
 install.repositories.mavenInstaller {
     pom.whenConfigured {
         it.dependencies.clear()

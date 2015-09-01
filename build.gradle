@@ -140,7 +140,10 @@ task proguard(type: proguard.gradle.ProGuardTask, dependsOn:[shadowJar]) {
     //whyareyoukeeping 'class capsule.org.codehaus.plexus.**'
     doLast {
         logger.info("$buildDir/libs/${project.name}-${project.version}-shrunk.jar -> $buildDir/libs/${project.name}-${project.version}.jar")
-        file("$buildDir/libs/${project.name}-${version}-shrunk.jar").renameTo(file("$buildDir/libs/${project.name}-${project.version}.jar"))
+        def out = file("$buildDir/libs/${project.name}-${project.version}.jar")
+        if (out.exists())
+            out.delete()
+        file("$buildDir/libs/${project.name}-${version}-shrunk.jar").renameTo(out)
     }
 }
 

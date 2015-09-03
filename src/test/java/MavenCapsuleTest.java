@@ -210,6 +210,7 @@ public class MavenCapsuleTest {
     private Jar newCapsuleJar() {
         return new Jar()
                 .setAttribute("Manifest-Version", "1.0")
+                .setAttribute("Premain-Class", "Capsule")
                 .setAttribute("Main-Class", "Capsule")
                 .setListAttribute("Caplets", list("MavenCapsule"));
     }

@@ -6,6 +6,7 @@ import java.util.Properties;
 import org.eclipse.aether.repository.Proxy;
 import org.eclipse.aether.repository.ProxySelector;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.util.repository.AuthenticationBuilder;
 import org.eclipse.aether.util.repository.DefaultProxySelector;
 
 /**
@@ -15,6 +16,7 @@ import org.eclipse.aether.util.repository.DefaultProxySelector;
  *
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+ * @author adrien.lauer@gmail.com
  */
 public class SystemProxySelector implements ProxySelector {
     private static final int LOG_NONE = 0;
@@ -78,9 +80,21 @@ public class SystemProxySelector implements ProxySelector {
         if (items == null)
             return;
 
+        String[] credentials = parseCredentials(env.get(key));
+
         String noProxy = env.get(isUpper(type) ? "NO_PROXY" : "no_proxy");
 
-        Proxy proxy = new Proxy(type.toLowerCase(), items[0], Integer.parseInt(items[1]));
+        Proxy proxy;
+        if (credentials != null) {
+            AuthenticationBuilder authenticationBuilder = new AuthenticationBuilder();
+            authenticationBuilder.addUsername(credentials[0]);
+            if (credentials[1] != null)
+                authenticationBuilder.addPassword(credentials[1]);
+
+            proxy = new Proxy(type.toLowerCase(), items[0], Integer.parseInt(items[1]), authenticationBuilder.build());
+        } else {
+            proxy = new Proxy(type.toLowerCase(), items[0], Integer.parseInt(items[1]));
+        }
         target.add(proxy, noProxy);
         count++;
 
@@ -101,9 +115,21 @@ public class SystemProxySelector implements ProxySelector {
         if (port == null || port.isEmpty())
             port = "http".equals(type) ? "80" : "443";
 
-        Proxy proxy = new Proxy(type, host, Integer.parseInt(port));
         String nonProxy = props.getProperty(type + ".nonProxyHosts");
+        String username = props.getProperty(type + ".proxyUser");
+        String password = props.getProperty(type + ".proxyPassword");
 
+        Proxy proxy;
+        if (username != null) {
+            AuthenticationBuilder authenticationBuilder = new AuthenticationBuilder();
+            authenticationBuilder.addUsername(username);
+            if (password != null)
+                authenticationBuilder.addPassword(password);
+
+            proxy = new Proxy(type, host, Integer.parseInt(port), authenticationBuilder.build());
+        } else {
+            proxy = new Proxy(type, host, Integer.parseInt(port));
+        }
         // append this proxy to the target selector
         target.add(proxy, nonProxy);
         count++;
@@ -111,6 +137,39 @@ public class SystemProxySelector implements ProxySelector {
         // dump proxy information to logger
         if (isLogging(LOG_VERBOSE))
             log(LOG_VERBOSE, String.format("Adding `%s` proxy: %s [from Java system properties]", type, proxy));
+    }
+
+    /**
+     * Given a proxy URL returns a two element arrays containing the user name and the password. The second component
+     * of the array is null if no password is specified.
+     *
+     * @param url   The proxy host URL.
+     * @return An array containing the user name and the password or null when none are present or the url is empty.
+     */
+    static String[] parseCredentials(String url) {
+        String[] result = new String[2];
+
+        if (url == null || url.isEmpty())
+            return null;
+
+        int p = url.indexOf("://");
+        if (p != -1)
+            url = url.substring(p + 3);
+
+        if ((p = url.indexOf('@')) != -1) {
+            String credentials = url.substring(0, p);
+
+            if ((p = credentials.indexOf(':')) != -1) {
+                result[0] = credentials.substring(0, p);
+                result[1] = credentials.substring(p + 1);
+            } else {
+                result[0] = credentials;
+            }
+        } else {
+            return null;
+        }
+
+        return result;
     }
 
     /**
@@ -129,6 +188,9 @@ public class SystemProxySelector implements ProxySelector {
         int p = url.indexOf("://");
         if (p != -1)
             url = url.substring(p + 3);
+
+        if ((p = url.indexOf('@')) != -1)
+            url = url.substring(p + 1);
 
         if ((p = url.indexOf(':')) != -1) {
             result[0] = url.substring(0, p);

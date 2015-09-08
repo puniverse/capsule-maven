@@ -203,7 +203,7 @@ public class MavenCapsule extends Capsule {
     }
 
     @Override
-    protected List<Path> resolve0(Object x) {
+    protected List<Path> resolve0(final Object x) {
         if (x instanceof Dependency) {
             final Dependency d = (Dependency) x;
             if (dependencies.get(d) == UNRESOLVED) {
@@ -214,8 +214,10 @@ public class MavenCapsule extends Capsule {
                 time("resolveAll", start);
             }
             assert dependencies.get(d) != UNRESOLVED : d;
-            x = dependencies.get(d);
-            return resolve(x);
+            final Object y = dependencies.get(d);
+            if (y == null) // there's another MavenCapsule in the chain
+                return super.resolve0(x);
+            return resolve(y);
         }
         return super.resolve0(x);
     }

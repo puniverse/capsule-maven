@@ -2,6 +2,7 @@ package capsule;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.util.HashMap;
@@ -14,6 +15,7 @@ import org.junit.Test;
 
 /**
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+ * @author adrien.lauer@gmail.com
  */
 public class SystemProxySelectorTest {
 
@@ -80,11 +82,47 @@ public class SystemProxySelectorTest {
         assertEquals("https", proxy2.getType());
         assertEquals("secure.proxy.com", proxy2.getHost());
         assertEquals(443, proxy2.getPort());
+    }
+
+    @Test
+    public void testProxyWithEnvPropertiesAndCredentials() {
+        Map<String, String> env = new HashMap<>();
+        env.put("https_proxy", "https://user:password@secure.proxy.com");
+
+        SystemProxySelector selector = new SystemProxySelector(env, new Properties(), 2);
+        assertEquals(1, selector.getCount());
+
+        RemoteRepository repo = new RemoteRepository.Builder("bar", null, "https://oss.sonatype.org/service/foo-bar-0.14.3.jar").build();
+        Proxy proxy = selector.getProxy(repo);
+        assertEquals("https", proxy.getType());
+        assertEquals("secure.proxy.com", proxy.getHost());
+        assertEquals(443, proxy.getPort());
+        assertNotNull(proxy.getAuthentication());
+        assertEquals("username=user, password=***", proxy.getAuthentication().toString()); // no way to retrieve password
 
     }
 
     @Test
-    public void testProxySystemPropertiesWithDefaultPorts() {
+    public void testProxyWithSystemPropertiesAndCredentials() {
+        Properties props = new Properties();
+        props.setProperty("https.proxyHost", "secure.host.name");
+        props.setProperty("https.proxyUser", "user");
+        props.setProperty("https.proxyPassword", "password");
+
+        SystemProxySelector selector = new SystemProxySelector(new HashMap(), props, 0);
+        assertEquals(1, selector.getCount());
+
+        RemoteRepository repo = new RemoteRepository.Builder("bar", null, "https://oss.sonatype.org/service/foo-bar-0.14.3.jar").build();
+        Proxy proxy = selector.getProxy(repo);
+        assertEquals("https", proxy.getType());
+        assertEquals("secure.host.name", proxy.getHost());
+        assertEquals(443, proxy.getPort());
+        assertNotNull(proxy.getAuthentication());
+        assertEquals("username=user, password=***", proxy.getAuthentication().toString()); // no way to retrieve password
+    }
+
+    @Test
+    public void testProxyWithSystemPropertiesAndDefaultPorts() {
         Properties props = new Properties();
         props.setProperty("http.proxyHost", "foo.host.name");
         props.setProperty("https.proxyHost", "secure.host.name");
@@ -106,7 +144,7 @@ public class SystemProxySelectorTest {
     }
 
     @Test
-    public void testProxySystemPropertiesWithCustomPorts() {
+    public void testProxyWithSystemPropertiesAndCustomPorts() {
         // environment conf
         Map<String, String> env = new HashMap<>();
         env.put("http_proxy", "env1.proxy.com:8080");
@@ -143,5 +181,20 @@ public class SystemProxySelectorTest {
         assertArrayEquals(new String[]{"foo.bar.org", "8080"}, SystemProxySelector.parseProxy("foo.bar.org:8080", "91"));
         assertArrayEquals(new String[]{"foo.com", "81"}, SystemProxySelector.parseProxy("http://foo.com", "81"));
         assertArrayEquals(new String[]{"foo.com", "8080"}, SystemProxySelector.parseProxy("http://foo.com:8080", "81"));
+        assertArrayEquals(new String[]{"foo.com", "81"}, SystemProxySelector.parseProxy("http://user:password@foo.com", "81"));
+        assertArrayEquals(new String[]{"foo.com", "8080"}, SystemProxySelector.parseProxy("http://user:password@foo.com:8080", "81"));
+    }
+
+    @Test
+    public void testParseCredentials() {
+        assertNull(SystemProxySelector.parseCredentials("foo.bar.org"));
+        assertNull(SystemProxySelector.parseCredentials("foo.bar.org:8080"));
+        assertNull(SystemProxySelector.parseCredentials("http://foo.com"));
+        assertNull(SystemProxySelector.parseCredentials("http://foo.com:8080"));
+        assertArrayEquals(new String[]{"user", "password"}, SystemProxySelector.parseCredentials("user:password@foo.com"));
+        assertArrayEquals(new String[]{"user", "password"}, SystemProxySelector.parseCredentials("user:password@foo.com:8080"));
+        assertArrayEquals(new String[]{"user", "password"}, SystemProxySelector.parseCredentials("http://user:password@foo.com"));
+        assertArrayEquals(new String[]{"user", "password"}, SystemProxySelector.parseCredentials("http://user:password@foo.com:8080"));
+        assertArrayEquals(new String[]{"user", null}, SystemProxySelector.parseCredentials("http://user@foo.com:8080"));
     }
 }

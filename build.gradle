@@ -53,7 +53,6 @@ configurations {
     }
         
     all*.exclude group: 'org.eclipse.sisu', module: '*'
-    all*.exclude group: 'commons-codec', module: '*'
 }
 
 dependencies {
@@ -111,6 +110,7 @@ shadowJar {
     exclude 'javax/inject/**'
     exclude 'org/apache/log4j/lf5/**'
     exclude 'org/apache/log4j/xml/log4j.dtd'
+    exclude 'org/apache/commons/codec/language/**'
     exclude '**/version.properties'
 
     relocate 'org.', 'capsule.org.'

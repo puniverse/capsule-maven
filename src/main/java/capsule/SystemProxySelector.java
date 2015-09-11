@@ -84,6 +84,9 @@ public class SystemProxySelector implements ProxySelector {
 
         String noProxy = env.get(isUpper(type) ? "NO_PROXY" : "no_proxy");
 
+        if (noProxy != null)
+            noProxy = noProxy.replace(',', '|');
+
         Proxy proxy;
         if (credentials != null) {
             AuthenticationBuilder authenticationBuilder = new AuthenticationBuilder();

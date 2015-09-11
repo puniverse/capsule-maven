@@ -68,7 +68,7 @@ public class SystemProxySelectorTest {
         Map<String, String> env = new HashMap<>();
         env.put("http_proxy", "http://my.proxy.com");
         env.put("https_proxy", "https://secure.proxy.com");
-        env.put("no_proxy", "*.foo.com|localhost");
+        env.put("no_proxy", "*.foo.com,localhost");
 
         SystemProxySelector selector = new SystemProxySelector(env, new Properties(), 2);
         assertEquals(2, selector.getCount());

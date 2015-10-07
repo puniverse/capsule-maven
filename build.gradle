@@ -18,7 +18,7 @@ targetCompatibility = '1.7'
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 group               = "co.paralleluniverse"
-version             = "1.0.1-SNAPSHOT"
+version             = "1.0.1"
 status              = "integration"
 description         = "Simple Java deployment"
 ext.url             = "https://github.com/puniverse/capsule"
@@ -51,7 +51,7 @@ configurations {
     [compile, runtime]*.resolutionStrategy {
         failOnVersionConflict()
     }
-        
+
     all*.exclude group: 'org.eclipse.sisu', module: '*'
 }
 
@@ -82,10 +82,10 @@ dependencies {
     compile('io.takari:takari-filemanager:0.8.3') {
         exclude group: 'org.slf4j', module: '*'
     }
-    
+
     runtime 'com.google.guava:guava:18.0' // necessary -- unfortunately -- for maven-aether-provider
     runtime 'org.slf4j:slf4j-nop:1.7.12'
-    
+
     testCompile "${group}:capsule-util:${version}"
     testCompile 'junit:junit:4.12'
     testCompile 'com.google.guava:guava:18.0'
@@ -96,13 +96,13 @@ dependencies {
 
 shadowJar {
     outputs.upToDateWhen { false }
-        
+
     // artifactAttached = false
     classifier = '' // overwrite jar
     destinationDir = file("$buildDir/libs")
 
     dependencies { exclude(dependency('co.paralleluniverse:capsule:.*')) }
-    
+
     exclude 'META-INF/**'
     exclude 'licenses/**' // licenses to thoughtworks CruiseControl, Javolution, and Indiana University Extreme! Labs, none of which are used by Capsule
     exclude 'about.html'
@@ -116,7 +116,7 @@ shadowJar {
     relocate 'org.', 'capsule.org.'
     relocate 'io.', 'capsule.io.'
     relocate 'com.', 'capsule.com.'
-            
+
     manifest {
         attributes(
 	    'Main-Class'  : 'Capsule',

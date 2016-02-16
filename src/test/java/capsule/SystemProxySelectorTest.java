@@ -180,7 +180,11 @@ public class SystemProxySelectorTest {
         assertArrayEquals(new String[]{"foo.bar.org", "81"}, SystemProxySelector.parseProxy("foo.bar.org", "81"));
         assertArrayEquals(new String[]{"foo.bar.org", "8080"}, SystemProxySelector.parseProxy("foo.bar.org:8080", "91"));
         assertArrayEquals(new String[]{"foo.com", "81"}, SystemProxySelector.parseProxy("http://foo.com", "81"));
+        assertArrayEquals(new String[] {"foo.com", "81"}, SystemProxySelector.parseProxy("http://foo.com/", "81"));
+        assertArrayEquals(new String[]{"foo.com", "81"}, SystemProxySelector.parseProxy("http://foo.com/hello", "81"));
         assertArrayEquals(new String[]{"foo.com", "8080"}, SystemProxySelector.parseProxy("http://foo.com:8080", "81"));
+        assertArrayEquals(new String[]{"foo.com", "8080"}, SystemProxySelector.parseProxy("http://foo.com:8080/", "81"));
+        assertArrayEquals(new String[]{"foo.com", "8080"}, SystemProxySelector.parseProxy("http://foo.com:8080/hello", "81"));
         assertArrayEquals(new String[]{"foo.com", "81"}, SystemProxySelector.parseProxy("http://user:password@foo.com", "81"));
         assertArrayEquals(new String[]{"foo.com", "8080"}, SystemProxySelector.parseProxy("http://user:password@foo.com:8080", "81"));
     }
@@ -196,5 +200,7 @@ public class SystemProxySelectorTest {
         assertArrayEquals(new String[]{"user", "password"}, SystemProxySelector.parseCredentials("http://user:password@foo.com"));
         assertArrayEquals(new String[]{"user", "password"}, SystemProxySelector.parseCredentials("http://user:password@foo.com:8080"));
         assertArrayEquals(new String[]{"user", null}, SystemProxySelector.parseCredentials("http://user@foo.com:8080"));
+        assertArrayEquals(new String[]{"user", "password"}, SystemProxySelector.parseCredentials("http://user:password@foo.com:8080/"));
+        assertArrayEquals(new String[]{"user", null}, SystemProxySelector.parseCredentials("http://user@foo.com:8080/"));
     }
 }

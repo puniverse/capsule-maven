@@ -203,6 +203,18 @@ public class SystemProxySelector implements ProxySelector {
             result[1] = defPort;
         }
 
+        // remove trailing slash from the host name
+        p = result[0].indexOf("/");
+        if( p != -1 ) {
+            result[0] = result[0].substring(0,p);
+        }
+
+        // remove trailing slash from the port number
+        p = result[1].indexOf("/");
+        if( p != -1 ) {
+            result[1] = result[1].substring(0,p);
+        }
+
         return result;
     }
 

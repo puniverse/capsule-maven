@@ -52,6 +52,8 @@ final class UserSettings {
 
     private static final UserSettings INSTANCE = new UserSettings();
 
+    private final Path repositoryHome;
+
     public static UserSettings getInstance() {
         return INSTANCE;
     }
@@ -68,6 +70,12 @@ final class UserSettings {
 
             settings.setServers(result.getServers());
             settings.setProxies(result.getProxies());
+
+            final String settingsRepositoryHome = settings.getLocalRepository();
+            if (settingsRepositoryHome != null)
+                repositoryHome = Paths.get(settings.getLocalRepository());
+            else
+                repositoryHome = DEFAULT_LOCAL_MAVEN.resolve("repository");
         } catch (SettingsBuildingException e) {
             throw new RuntimeException(e);
         }
@@ -100,6 +108,10 @@ final class UserSettings {
             props.put(key, entry.getValue());
         }
         return props;
+    }
+
+    public Path getRepositoryHome() {
+        return repositoryHome;
     }
 
     public ProxySelector getProxySelector() {

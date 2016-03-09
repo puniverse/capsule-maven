@@ -77,22 +77,32 @@ public class DependencyManager {
 
     static final Path DEFAULT_LOCAL_MAVEN = Paths.get(System.getProperty(PROP_USER_HOME), ".m2");
 
-    static final Map<String, String> WELL_KNOWN_REPOS = unmodifiableMap(new HashMap<String, String>() {
-        {
-            put("central", "central(https://repo1.maven.org/maven2/)");
-            put("central-http", "central(http://repo1.maven.org/maven2/)");
-            put("jcenter", "jcenter(https://jcenter.bintray.com/)");
-            put("jcenter-http", "jcenter(http://jcenter.bintray.com/)");
-            put("local", "local(file:" + DEFAULT_LOCAL_MAVEN.resolve("repository") + ")");
-        }
-    });
-
     private static final String LATEST_VERSION = "[0,)";
     private static final int LOG_NONE = 0;
     private static final int LOG_QUIET = 1;
     private static final int LOG_VERBOSE = 2;
     private static final int LOG_DEBUG = 3;
     private static final String LOG_PREFIX = "CAPSULE: ";
+
+    private static final UserSettings MVN_SETTINGS;
+    static {
+        try {
+            MVN_SETTINGS = UserSettings.getInstance();
+        } catch (final Throwable t) {
+            t.printStackTrace();
+            throw t;
+        }
+    }
+
+    static final Map<String, String> WELL_KNOWN_REPOS = unmodifiableMap(new HashMap<String, String>() {
+        {
+            put("central", "central(https://repo1.maven.org/maven2/)");
+            put("central-http", "central(http://repo1.maven.org/maven2/)");
+            put("jcenter", "jcenter(https://jcenter.bintray.com/)");
+            put("jcenter-http", "jcenter(http://jcenter.bintray.com/)");
+            put("local", "local(file:" + MVN_SETTINGS.getRepositoryHome() + ")");
+        }
+    });
     //</editor-fold>
 
     private final boolean forceRefresh;
@@ -102,7 +112,6 @@ public class DependencyManager {
     private RepositorySystemSession session;
     private List<RemoteRepository> repos;
     private final int logLevel;
-    private final UserSettings settings;
 
     //<editor-fold desc="Construction and Setup">
     /////////// Construction and Setup ///////////////////////////////////
@@ -111,13 +120,12 @@ public class DependencyManager {
         this.forceRefresh = forceRefresh;
         this.offline = isPropertySet(PROP_OFFLINE, false);
         if (localRepoPath == null)
-            localRepoPath = DEFAULT_LOCAL_MAVEN.resolve("repository");
+            localRepoPath = MVN_SETTINGS.getRepositoryHome();
 
         log(LOG_DEBUG, "DependencyManager - Offline: " + offline);
         log(LOG_DEBUG, "DependencyManager - Local repo: " + localRepoPath);
 
         this.localRepo = new LocalRepository(localRepoPath.toFile());
-        this.settings = UserSettings.getInstance();
         this.system = newRepositorySystem();
     }
 
@@ -200,9 +208,9 @@ public class DependencyManager {
         s.setLocalRepositoryManager(system.newLocalRepositoryManager(s, localRepo));
 
         SystemProxySelector sysProxySelector = new SystemProxySelector(logLevel);
-        s.setProxySelector(sysProxySelector.isValid() ? sysProxySelector : settings.getProxySelector());
-        s.setMirrorSelector(settings.getMirrorSelector());
-        s.setAuthenticationSelector(settings.getAuthSelector());
+        s.setProxySelector(sysProxySelector.isValid() ? sysProxySelector : MVN_SETTINGS.getProxySelector());
+        s.setMirrorSelector(MVN_SETTINGS.getMirrorSelector());
+        s.setAuthenticationSelector(MVN_SETTINGS.getAuthSelector());
 
         s.setDependencyGraphTransformer(newConflicResolver());
 

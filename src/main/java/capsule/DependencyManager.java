@@ -1,6 +1,6 @@
 /*
  * Capsule
- * Copyright (c) 2014-2015, Parallel Universe Software Co. All rights reserved.
+ * Copyright (c) 2014-2016, Parallel Universe Software Co. All rights reserved.
  * 
  * This program and the accompanying materials are licensed under the terms 
  * of the Eclipse Public License v1.0, available at
@@ -135,10 +135,10 @@ public class DependencyManager {
             //noinspection ArraysAsListWithZeroOrOneArgument
             repos = Arrays.asList("central");
 
-        final List<RemoteRepository> rs = new ArrayList<RemoteRepository>();
-        for (String r : repos) {
-            RepositoryPolicy releasePolicy = maketReleasePolicy(r);
-            RepositoryPolicy snapshotPolicy = allowSnapshots ? maketSnapshotPolicy(r) : new RepositoryPolicy(false, null, null);
+        final List<RemoteRepository> rs = new ArrayList<>();
+        for (final String r : repos) {
+            RepositoryPolicy releasePolicy = makeReleasePolicy(r);
+            RepositoryPolicy snapshotPolicy = allowSnapshots ? makeSnapshotPolicy(r) : new RepositoryPolicy(false, null, null);
 
             RemoteRepository repo = createRepo(r, releasePolicy, snapshotPolicy);
             ProxySelector selector = getSession().getProxySelector();
@@ -160,12 +160,12 @@ public class DependencyManager {
     }
 
     /** @noinspection UnusedParameters*/
-    protected RepositoryPolicy maketReleasePolicy(String repo) {
+    protected RepositoryPolicy makeReleasePolicy(String repo) {
         return new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_NEVER, RepositoryPolicy.CHECKSUM_POLICY_WARN);
     }
 
-    protected RepositoryPolicy maketSnapshotPolicy(String repo) {
-        return maketReleasePolicy(repo);
+    protected RepositoryPolicy makeSnapshotPolicy(String repo) {
+        return makeReleasePolicy(repo);
     }
 
     private static RepositorySystem newRepositorySystem() {
@@ -215,7 +215,7 @@ public class DependencyManager {
         s.setMirrorSelector(MVN_SETTINGS.getMirrorSelector());
         s.setAuthenticationSelector(MVN_SETTINGS.getAuthSelector());
 
-        s.setDependencyGraphTransformer(newConflicResolver());
+        s.setDependencyGraphTransformer(newConflictResolver());
 
         if (logLevel > LOG_NONE) {
             final PrintStream out = prefixStream(System.err, LOG_PREFIX);
@@ -226,12 +226,13 @@ public class DependencyManager {
         return s;
     }
 
-    private static ConflictResolver newConflicResolver() {
-        return new ConflictResolver(
-                new org.eclipse.aether.util.graph.transformer.NearestVersionSelector(),
-                new org.eclipse.aether.util.graph.transformer.JavaScopeSelector(),
-                new org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector(),
-                new org.eclipse.aether.util.graph.transformer.JavaScopeDeriver());
+    private static ConflictResolver newConflictResolver() {
+        return new ConflictResolver (
+            new org.eclipse.aether.util.graph.transformer.NearestVersionSelector(),
+            new org.eclipse.aether.util.graph.transformer.JavaScopeSelector(),
+            new org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector(),
+            new org.eclipse.aether.util.graph.transformer.JavaScopeDeriver()
+        );
     }
 
     /** @noinspection unused*/

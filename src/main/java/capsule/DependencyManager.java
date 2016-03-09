@@ -79,6 +79,7 @@ public class DependencyManager {
 
     private static final String LATEST_VERSION = "[0,)";
     private static final int LOG_NONE = 0;
+    /** @noinspection unused*/
     private static final int LOG_QUIET = 1;
     private static final int LOG_VERBOSE = 2;
     private static final int LOG_DEBUG = 3;
@@ -131,6 +132,7 @@ public class DependencyManager {
 
     public final void setRepos(List<String> repos, boolean allowSnapshots) {
         if (repos == null)
+            //noinspection ArraysAsListWithZeroOrOneArgument
             repos = Arrays.asList("central");
 
         final List<RemoteRepository> rs = new ArrayList<RemoteRepository>();
@@ -157,6 +159,7 @@ public class DependencyManager {
         }
     }
 
+    /** @noinspection UnusedParameters*/
     protected RepositoryPolicy maketReleasePolicy(String repo) {
         return new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_NEVER, RepositoryPolicy.CHECKSUM_POLICY_WARN);
     }
@@ -231,6 +234,7 @@ public class DependencyManager {
                 new org.eclipse.aether.util.graph.transformer.JavaScopeDeriver());
     }
 
+    /** @noinspection unused*/
     public void setSystemProperties(Map<String, String> properties) {
         final Map<String, String> ps = Collections.unmodifiableMap(properties);
         if (getSession() instanceof DefaultRepositorySystemSession)
@@ -386,11 +390,11 @@ public class DependencyManager {
 
     //<editor-fold defaultstate="collapsed" desc="Parsing">
     /////////// Parsing ///////////////////////////////////
-    public final static Dependency toDependency(String coords, String type) {
+    public static Dependency toDependency(String coords, String type) {
         return new Dependency(coordsToArtifact(coords, type), JavaScopes.RUNTIME, false, getExclusions(coords));
     }
 
-    protected final static List<Dependency> toDependencies(List<String> coords, String type) {
+    protected static List<Dependency> toDependencies(List<String> coords, String type) {
         final List<Dependency> deps = new ArrayList<Dependency>(coords.size());
         for (String c : coords)
             deps.add(toDependency(c, type));

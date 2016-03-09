@@ -48,10 +48,9 @@ final class UserSettings {
 
     private static final Path MAVEN_HOME = getMavenHome();
 
-    private final Settings settings;
-
     private static final UserSettings INSTANCE = new UserSettings();
 
+    private final Settings settings;
     private final Path repositoryHome;
 
     public static UserSettings getInstance() {

@@ -9,8 +9,8 @@
 package capsule;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.model.Model;
@@ -33,15 +33,23 @@ public final class PomReader {
     }
 
     public String getGroupId() {
-        return pom.getGroupId();
+        return
+            pom.getGroupId() != null ?
+                pom.getGroupId() : (pom.getParent() != null ? pom.getParent().getGroupId() : null);
     }
 
     public String getVersion() {
-        return pom.getVersion();
+        return
+            pom.getVersion() != null ?
+                pom.getVersion() : (pom.getParent() != null ? pom.getParent().getVersion() : null);
     }
 
     public String getId() {
         return pom.getId();
+    }
+
+    public Properties getProperties() {
+        return pom.getProperties();
     }
 
     public List<String> getRepositories() {
@@ -113,5 +121,23 @@ public final class PomReader {
         if (repo.getId() != null && !repo.getId().isEmpty())
             return repo.getId() + "(" + repo.getUrl() + ")";
         return repo.getUrl();
+    }
+
+    public String resolve(String s) {
+        if (s == null)
+            return null;
+
+        final Properties ps = getProperties();
+        String ret = s;
+        if (getGroupId() != null)
+            ret = ret.replace("${project.groupId}", getGroupId()).replace("${pom.groupId}", getGroupId());
+        if (getVersion() != null)
+            ret = ret
+                .replace("${project.version}", getVersion())
+                .replace("${pom.version}", getVersion())
+                .replace("${version}", getVersion());
+        for(final String pName : ps.stringPropertyNames())
+            ret = ret.replace("${" + pName + "}", ps.getProperty(pName));
+        return ret;
     }
 }

@@ -169,7 +169,7 @@ public class MavenCapsule extends Capsule {
             if ((deps == null || deps.isEmpty()) && pom != null) {
                 deps = new ArrayList<>();
                 for (String[] d : pom.getDependencies())
-                    deps.add(lookup(d[0], d[1], ATTR_DEPENDENCIES, null));
+                    deps.add(lookup(pom.resolve(d[0]), d[1], ATTR_DEPENDENCIES, null));
             }
             return (T) deps;
         }
@@ -198,6 +198,19 @@ public class MavenCapsule extends Capsule {
                     dependencies.put(dep, UNRESOLVED);
                 return super.lookup0(dep, type, attrContext, context);
             }
+        } else if (x instanceof String && res instanceof Path) { // If found also lookup its transitive deps, see #14
+            final String s = (String) x;
+            final List<Object> ret = new ArrayList<>();
+            ret.add(res);
+            if (isDependency(s)) {
+                final Dependency dep = DependencyManager.toDependency(s, type.isEmpty() ? "jar" : type);
+                final PomReader pom = createPomReader(getWritableAppCache().resolve((Path) res), getPomJarEntryName(dep));
+                if (pom != null && pom.getDependencies() != null) {
+                    for (final String[] d : pom.getDependencies())
+                        addFlat(lookup0(pom.resolve(d[0]), d[1], ATTR_DEPENDENCIES, null), ret);
+                }
+            }
+            return ret;
         }
         return res;
     }
@@ -226,10 +239,14 @@ public class MavenCapsule extends Capsule {
     //<editor-fold defaultstate="collapsed" desc="Internal Methods">
     /////////// Internal Methods ///////////////////////////////////
     private PomReader createPomReader() {
-        try (InputStream is = getEntryInputStream(getJarFile(), POM_FILE)) {
+        return createPomReader(getJarFile(), POM_FILE);
+    }
+
+    private PomReader createPomReader(Path jarFile, String entry) {
+        try (InputStream is = getEntryInputStream(jarFile, entry)) {
             return is != null ? new PomReader(is) : null;
         } catch (IOException e) {
-            throw new RuntimeException("Could not read " + POM_FILE, e);
+            throw new RuntimeException("Could not read " + entry, e);
         }
     }
 
@@ -289,6 +306,21 @@ public class MavenCapsule extends Capsule {
             localRepo = repo;
         }
         return localRepo;
+    }
+
+    private static String getPomJarEntryName(Dependency dep) {
+        return
+            "META-INF/maven/" +
+                dep.getArtifact().getGroupId() + "/" +
+                dep.getArtifact().getArtifactId() + "/" +
+                POM_FILE;
+    }
+
+    private static void addFlat(Object o, List<Object> ret) {
+        if (o instanceof Collection)
+            ret.addAll((Collection) o);
+        else
+            ret.add(o);
     }
 
     private static boolean isDependency(String lib) {

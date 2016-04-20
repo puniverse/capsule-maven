@@ -55,10 +55,10 @@ if (!project.hasProperty("sonatypeUsername") || !project.hasProperty("sonatypePa
 }
 
 repositories {
-    mavenLocal()
+//     mavenLocal()
     mavenCentral()
-    maven { url "https://oss.sonatype.org/content/repositories/releases" }
-    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+//    maven { url "https://oss.sonatype.org/content/repositories/releases" }
+//    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 configurations {
@@ -103,7 +103,7 @@ dependencies {
     testCompile "$group:capsule-util:$capsuleVer"
     testCompile "junit:junit:$junitVer"
     testCompile "com.google.guava:guava:$testGuavaVer"
-    testCompile "org.truth0:truth:$truthVer"
+    testCompile "com.google.truth:truth:$truthVer"
     testCompile "com.google.jimfs:jimfs:$jimfsVer"
     testCompile "org.mockito:mockito-all:$mockitoVer"
 }

@@ -36,10 +36,7 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.collection.DependencyCollectionException;
-import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.graph.DependencyNode;
-import org.eclipse.aether.graph.DependencyVisitor;
-import org.eclipse.aether.graph.Exclusion;
+import org.eclipse.aether.graph.*;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.Proxy;
@@ -309,14 +306,14 @@ public class DependencyManager {
             resolved.put(clean(dn.getDependency()), jars);
             dn.accept(new DependencyVisitor() {
                 @Override
-                public boolean visitEnter(DependencyNode node) {
+                public final boolean visitEnter(DependencyNode node) {
                     if (hasArtifactPath(node)) // Conflict losers won't have it
                         jars.add(path(node.getArtifact()));
                     return true;
                 }
 
                 @Override
-                public boolean visitLeave(DependencyNode node) {
+                public final boolean visitLeave(DependencyNode node) {
                     return true;
                 }
             });

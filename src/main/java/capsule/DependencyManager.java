@@ -203,6 +203,8 @@ public class DependencyManager {
 
         s.setConfigProperty(ConfigurationProperties.CONNECT_TIMEOUT, propertyOrEnv(PROP_CONNECT_TIMEOUT, ENV_CONNECT_TIMEOUT));
         s.setConfigProperty(ConfigurationProperties.REQUEST_TIMEOUT, propertyOrEnv(PROP_REQUEST_TIMEOUT, ENV_REQUEST_TIMEOUT));
+        // WARN: `ConflictResolver.CONFIG_PROP_VERBOSE` will retain (and mark) dependency graph duplicates such as conflict resolution losers since
+        // http://git.eclipse.org/c/aether/aether-core.git/diff/aether-util/src/main/java/org/eclipse/aether/util/graph/transformer/ConflictResolver.java?id=141a3669d23ab67846b0c3ccef14eb0cdc70cee9
         s.setConfigProperty(ConflictResolver.CONFIG_PROP_VERBOSE, true);
 
         s.setOffline(offline);
@@ -308,7 +310,8 @@ public class DependencyManager {
             dn.accept(new DependencyVisitor() {
                 @Override
                 public boolean visitEnter(DependencyNode node) {
-                    jars.add(path(node.getArtifact()));
+                    if (hasArtifactPath(node)) // Conflict losers won't have it
+                        jars.add(path(node.getArtifact()));
                     return true;
                 }
 
@@ -349,6 +352,14 @@ public class DependencyManager {
             log(LOG_DEBUG, "DependencyManager.resolve " + collectRequest);
         try {
             final DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
+            dependencyRequest.setFilter(new DependencyFilter() {
+                @Override
+                public boolean accept(DependencyNode n, List<DependencyNode> parents) {
+                    // Exclude conflict losers (which are marked but left in if verbose mode is enabled, see
+                    // http://git.eclipse.org/c/aether/aether-core.git/diff/aether-util/src/main/java/org/eclipse/aether/util/graph/transformer/ConflictResolver.java?id=141a3669d23ab67846b0c3ccef14eb0cdc70cee9t
+                    return !n.getData().containsKey(ConflictResolver.NODE_DATA_WINNER);
+                }
+            });
             final DependencyResult result = system.resolveDependencies(getSession(), dependencyRequest);
             if (isLogging(LOG_DEBUG))
                 log(LOG_DEBUG, "DependencyManager.resolve: " + result);
@@ -480,6 +491,14 @@ public class DependencyManager {
                 super.println(prefix + x);
             }
         };
+    }
+
+    private static boolean hasArtifactPath(DependencyNode node) {
+        Artifact a;
+        return
+            node != null &&
+            (a = node.getArtifact()) != null &&
+            a.getFile() != null;
     }
 
     private static String propertyOrEnv(String propName, String envVar) {

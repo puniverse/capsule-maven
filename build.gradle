@@ -34,6 +34,18 @@ ext.caplet = 'MavenCapsule'
 
 ext.capsuleVer          = '1.0.2'
 ext.aetherVer           = '1.1.0'
+ext.mavenVer            = '3.3.9'
+ext.plexusVer           = '1.6'
+ext.slf4jVer            = '1.7.21'
+ext.takariLocalRepoVer  = '0.11.2'
+ext.takariFilemanVer    = '0.8.3'
+ext.mavenGuavaVer       = '18.0'
+
+ext.junitVer            = '4.12'
+ext.testGuavaVer        = '19.0'
+ext.truthVer            = '0.23'
+ext.jimfsVer            = '1.1'
+ext.mockitoVer          = '1.10.19'
 
 // User and Password are taken from ~/.gradle/gradle.properties
 if (!project.hasProperty("sonatypeUsername") || !project.hasProperty("sonatypePassword")) {
@@ -67,33 +79,33 @@ dependencies {
     compile("org.eclipse.aether:aether-transport-http:$aetherVer") {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
-    compile('org.apache.maven:maven-aether-provider:3.3.9') {
+    compile("org.apache.maven:maven-aether-provider:$mavenVer") {
         exclude group: 'org.eclipse.aether', module: '*'
     }
-    compile 'org.apache.maven:maven-model:3.3.9'
-    compile('org.apache.maven:maven-settings-builder:3.3.9') {
+    compile "org.apache.maven:maven-model:$mavenVer"
+    compile("org.apache.maven:maven-settings-builder:$mavenVer") {
         exclude group: 'org.codehaus.plexus', module: 'plexus-utils'
     }
-    compile('org.codehaus.plexus:plexus-container-default:1.6') {
+    compile("org.codehaus.plexus:plexus-container-default:$plexusVer") {
         exclude group: 'org.codehaus.plexus', module: 'plexus-utils'
         exclude group: 'com.google.collections', module: 'google-collections'
         exclude group: 'commons-logging', module: '*'
         exclude group: 'junit', module: '*'
     }
-    compile 'io.takari.aether:takari-local-repository:0.11.2'
-    compile('io.takari:takari-filemanager:0.8.3') {
+    compile "io.takari.aether:takari-local-repository:$takariLocalRepoVer"
+    compile("io.takari:takari-filemanager:$takariFilemanVer") {
         exclude group: 'org.slf4j', module: '*'
     }
 
-    runtime 'com.google.guava:guava:18.0' // necessary -- unfortunately -- for maven-aether-provider
-    runtime 'org.slf4j:slf4j-nop:1.7.21'
+    runtime "com.google.guava:guava:$mavenGuavaVer" // necessary -- unfortunately -- for maven-aether-provider
+    runtime "org.slf4j:slf4j-nop:$slf4jVer"
 
-    testCompile "${group}:capsule-util:${version}"
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.google.guava:guava:19.0'
-    testCompile 'org.truth0:truth:0.23'
-    testCompile 'com.google.jimfs:jimfs:1.1'
-    testCompile 'org.mockito:mockito-all:1.10.19'
+    testCompile "$group:capsule-util:$capsuleVer"
+    testCompile "junit:junit:$junitVer"
+    testCompile "com.google.guava:guava:$testGuavaVer"
+    testCompile "org.truth0:truth:$truthVer"
+    testCompile "com.google.jimfs:jimfs:$jimfsVer"
+    testCompile "org.mockito:mockito-all:$mockitoVer"
 }
 
 shadowJar {

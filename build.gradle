@@ -32,7 +32,7 @@ ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 ext.caplet = 'MavenCapsule'
 
-ext.capsuleVer          = '1.0.3-VERSION'
+ext.capsuleVer          = '1.0.3-SNAPSHOT'
 ext.aetherVer           = '1.1.0'
 ext.mavenVer            = '3.3.9'
 ext.plexusVer           = '1.6'

@@ -43,7 +43,7 @@ ext.mavenGuavaVer       = '18.0'
 
 ext.junitVer            = '4.12'
 ext.testGuavaVer        = '19.0'
-ext.truthVer            = '0.23'
+ext.truthVer            = '0.28'
 ext.jimfsVer            = '1.1'
 ext.mockitoVer          = '1.10.19'
 

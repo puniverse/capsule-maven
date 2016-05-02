@@ -1,6 +1,6 @@
 /*
  * Capsule
- * Copyright (c) 2014-2015, Parallel Universe Software Co. All rights reserved.
+ * Copyright (c) 2014-2016, Parallel Universe Software Co. All rights reserved.
  * 
  * This program and the accompanying materials are licensed under the terms 
  * of the Eclipse Public License v1.0, available at
@@ -97,7 +97,7 @@ public class MavenCapsuleTest {
 
         Capsule capsule = newCapsule(jar);
         for (String d : ds)
-            assert_().that(capsule.getAttribute(Capsule.ATTR_DEPENDENCIES)).has().item(DependencyManager.toDependency(d, "jar"));
+            assert_().that(capsule.getAttribute(Capsule.ATTR_DEPENDENCIES)).contains(DependencyManager.toDependency(d, "jar"));
     }
 
     //<editor-fold defaultstate="collapsed" desc="POM Utilities">

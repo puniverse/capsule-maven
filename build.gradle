@@ -39,7 +39,7 @@ ext.plexusVer           = '1.6'
 ext.slf4jVer            = '1.7.21'
 ext.takariLocalRepoVer  = '0.11.2'
 ext.takariFilemanVer    = '0.8.3'
-ext.mavenGuavaVer       = '18.0'
+ext.mavenGuavaVer       = '19.0'
 
 ext.junitVer            = '4.12'
 ext.testGuavaVer        = '19.0'
@@ -81,6 +81,7 @@ dependencies {
     }
     compile("org.apache.maven:maven-aether-provider:$mavenVer") {
         exclude group: 'org.eclipse.aether', module: '*'
+        exclude group: 'com.google.guava', module: '*'
     }
     compile "org.apache.maven:maven-model:$mavenVer"
     compile("org.apache.maven:maven-settings-builder:$mavenVer") {

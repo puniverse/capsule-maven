@@ -81,7 +81,7 @@ public class MavenCapsuleTest {
 
     @Test
     public void testPomDependencies() throws Exception {
-        List<String> ds = list("com.acme:bar:1.2", "com.acme:baz:3.4:jdk8(org.asd:qqq,com.gogo:bad)");
+        List<String> ds = list("com.acme:bar:1.2", "com.acme:baz:3.4:jdk8(org.asd:qqq,com.gogo:bad,com.wha:*)");
 
         Model pom = newPom();
         pom.setGroupId("com.acme");
@@ -96,8 +96,9 @@ public class MavenCapsuleTest {
                 .addEntry("pom.xml", toInputStream(pom));
 
         Capsule capsule = newCapsule(jar);
+        List<Object> deps = capsule.getAttribute(Capsule.ATTR_DEPENDENCIES);
         for (String d : ds)
-            assert_().that(capsule.getAttribute(Capsule.ATTR_DEPENDENCIES)).contains(DependencyManager.toDependency(d, "jar"));
+            assert_().that(deps).contains(DependencyManager.toDependency(d, "jar"));
     }
 
     //<editor-fold defaultstate="collapsed" desc="POM Utilities">

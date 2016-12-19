@@ -198,7 +198,7 @@ public class MavenCapsule extends Capsule {
                     dependencies.put(dep, UNRESOLVED);
                 return super.lookup0(dep, type, attrContext, context);
             }
-        } else if (x instanceof String && res instanceof Path) { // If found also lookup its transitive deps, see #14
+        } else if (x instanceof String && res instanceof Path && ATTR_DEPENDENCIES.equals(attrContext)) { // If found also lookup its transitive deps, see #14
             final String s = (String) x;
             final List<Object> ret = new ArrayList<>();
             ret.add(res);

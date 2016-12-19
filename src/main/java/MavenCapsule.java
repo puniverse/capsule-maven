@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Parallel Universe Software Co. and Contributors. All rights reserved.
+ * Copyright (c) 2015-2016, Parallel Universe Software Co. and Contributors. All rights reserved.
  * 
  * This program and the accompanying materials are licensed under the terms 
  * of the Eclipse Public License v1.0, available at

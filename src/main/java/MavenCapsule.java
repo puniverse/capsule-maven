@@ -273,7 +273,8 @@ public class MavenCapsule extends Capsule {
 
     protected DependencyManager createDependencyManager(Path localRepo, boolean reset, int logLevel) {
         MavenCapsule ct;
-        return (ct = getCallTarget(MavenCapsule.class)) != null ? ct.createDependencyManager(localRepo, reset, logLevel) : createDependencyManager0(localRepo, reset, logLevel);
+        return (ct = getCallTarget(MavenCapsule.class)) != null ? ct.createDependencyManager(localRepo, reset, logLevel)
+                : createDependencyManager0(localRepo, reset, logLevel);
     }
 
     private DependencyManager createDependencyManager0(Path localRepo, boolean reset, int logLevel) {
@@ -309,11 +310,10 @@ public class MavenCapsule extends Capsule {
     }
 
     private static String getPomJarEntryName(Dependency dep) {
-        return
-            "META-INF/maven/" +
-                dep.getArtifact().getGroupId() + "/" +
-                dep.getArtifact().getArtifactId() + "/" +
-                POM_FILE;
+        return "META-INF/maven/"
+               + dep.getArtifact().getGroupId() + "/"
+               + dep.getArtifact().getArtifactId() + "/"
+               + POM_FILE;
     }
 
     private static void addFlat(Object o, List<Object> ret) {

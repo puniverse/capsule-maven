@@ -166,6 +166,8 @@ public class MavenCapsule extends Capsule {
 
         if (ATTR_DEPENDENCIES.equals(attr)) {
             List<Object> deps = super.attribute(ATTR_DEPENDENCIES);
+            
+            // find deps in POM if not in manifest
             if ((deps == null || deps.isEmpty()) && pom != null) {
                 deps = new ArrayList<>();
                 for (String[] d : pom.getDependencies())

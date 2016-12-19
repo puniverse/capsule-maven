@@ -56,7 +56,7 @@ public final class PomReader {
         final List<Repository> repos = pom.getRepositories();
         if (repos == null)
             return null;
-        final List<String> repositories = new ArrayList<String>(repos.size());
+        final List<String> repositories = new ArrayList<>(repos.size());
         for (Repository repo : repos)
             repositories.add(convert(repo));
         return repositories;

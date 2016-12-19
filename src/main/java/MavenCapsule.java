@@ -157,7 +157,7 @@ public class MavenCapsule extends Capsule {
             if (ver == null && version != null)
                 ver = version;
             if (ver == null && hasAttribute(ATTR_APP_ARTIFACT) && isDependency(getAttribute(ATTR_APP_ARTIFACT)))
-                ver = getAppArtifactVersion(getDependencyManager().getLatestVersion(getAttribute(ATTR_APP_VERSION), "jar"));
+                ver = getAppArtifactVersion(getDependencyManager().getLatestVersion(getAttribute(ATTR_APP_ARTIFACT), "jar"));
             if (ver == null && pom != null)
                 ver = pom.getVersion();
             this.version = ver; // cache

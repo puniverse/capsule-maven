@@ -204,10 +204,10 @@ public class MavenCapsule extends Capsule {
             ret.add(res);
             if (isDependency(s)) {
                 final Dependency dep = DependencyManager.toDependency(s, type.isEmpty() ? "jar" : type);
-                final PomReader pom = createPomReader(getWritableAppCache().resolve((Path) res), getPomJarEntryName(dep));
-                if (pom != null && pom.getDependencies() != null) {
-                    for (final String[] d : pom.getDependencies())
-                        addFlat(lookup0(pom.resolve(d[0]), d[1], ATTR_DEPENDENCIES, null), ret);
+                final PomReader pom1 = createPomReader(getWritableAppCache().resolve((Path) res), getPomJarEntryName(dep));
+                if (pom1 != null && pom1.getDependencies() != null) {
+                    for (final String[] d : pom1.getDependencies())
+                        addFlat(lookup0(pom1.resolve(d[0]), d[1], ATTR_DEPENDENCIES, null), ret);
                 }
             }
             return ret;

@@ -179,7 +179,7 @@ public class MavenCapsule extends Capsule {
         }
 
         if (ATTR_REPOSITORIES.equals(attr)) {
-            final List<String> repos = new ArrayList<String>();
+            final List<String> repos = new ArrayList<>();
             repos.addAll(nullToEmpty(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*")));
             repos.addAll(super.attribute(ATTR_REPOSITORIES));
             if (pom != null)

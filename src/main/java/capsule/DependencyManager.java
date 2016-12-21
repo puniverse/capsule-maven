@@ -36,7 +36,11 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.collection.DependencyCollectionException;
-import org.eclipse.aether.graph.*;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.graph.DependencyVisitor;
+import org.eclipse.aether.graph.Exclusion;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.Authentication;
 import org.eclipse.aether.repository.AuthenticationSelector;
@@ -349,17 +353,11 @@ public class DependencyManager {
     }
 
     public final Map<Dependency, List<Path>> resolveDependencies(List<Dependency> deps) {
-        final Map<Dependency, List<Path>> resolved = new HashMap<>();
-
         final List<DependencyNode> children = resolve0(collect().setDependencies(deps)).getRoot().getChildren();
-//        if (children.size() != deps.size())
-//            throw new AssertionError("deps: " + deps + " -> " + children);
-
+        
+        final Map<Dependency, List<Path>> resolved = new HashMap<>();
         for (DependencyNode dn : children) {
             final List<Path> jars = new ArrayList<>();
-
-//            if(!equalExceptVersion(deps.get(i).getArtifact(), dn.getArtifact()))
-//                throw new AssertionError();
             resolved.put(clean(dn.getDependency()), jars);
             dn.accept(new DependencyVisitor() {
                 @Override
@@ -389,8 +387,8 @@ public class DependencyManager {
         if (isLogging(LOG_DEBUG))
             log(LOG_DEBUG, "DependencyManager.resolve " + collectRequest);
         try {
-            final DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
-            dependencyRequest.setFilter(new DependencyFilter() {
+            final DependencyRequest dependencyRequest = new DependencyRequest(collectRequest,
+                    new DependencyFilter() {
                 @Override
                 public boolean accept(DependencyNode n, List<DependencyNode> parents) {
                     // Exclude conflict losers (which are marked but left in if verbose mode is enabled, see
@@ -527,10 +525,9 @@ public class DependencyManager {
 
     private static boolean hasArtifactPath(DependencyNode node) {
         Artifact a;
-        return
-            node != null &&
-            (a = node.getArtifact()) != null &&
-            a.getFile() != null;
+        return node != null
+               && (a = node.getArtifact()) != null
+               && a.getFile() != null;
     }
 
     private static String propertyOrEnv(String propName, String envVar) {

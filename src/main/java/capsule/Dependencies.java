@@ -1,6 +1,6 @@
 /*
  * Capsule
- * Copyright (c) 2014-2015, Parallel Universe Software Co. and Contributors. All rights reserved.
+ * Copyright (c) 2014-2016, Parallel Universe Software Co. and Contributors. All rights reserved.
  * 
  * This program and the accompanying materials are licensed under the terms 
  * of the Eclipse Public License v1.0, available at
@@ -17,6 +17,7 @@ import org.eclipse.aether.graph.Exclusion;
 import org.eclipse.aether.repository.RemoteRepository;
 
 /**
+ * Used by build tool plugins
  * @author circlespainter
  */
 public class Dependencies {
@@ -27,7 +28,7 @@ public class Dependencies {
      * @param rr The remote repository
      */
     public static String toCapsuleRepositoryString(RemoteRepository rr) {
-        return DependencyManager.WELL_KNOWN_REPOS.keySet().contains(rr.getId())
+        return DependencyManager.WELL_KNOWN_REPOS.keySet().contains(rr.getId()) 
                 ? rr.getId() : rr.getUrl();
     }
 
@@ -37,8 +38,7 @@ public class Dependencies {
      * @param d The dependency
      */
     public static String toCapsuleDependencyString(Dependency d) {
-        return toCapsuleArtifactString(d.getArtifact())
-                + toCapsuleExclusionsString(d.getExclusions());
+        return toCapsuleArtifactString(d.getArtifact()) + toCapsuleExclusionsString(d.getExclusions());
     }
 
     private static String toCapsuleArtifactString(Artifact a) {
@@ -50,9 +50,7 @@ public class Dependencies {
 
         if (!exclusions.isEmpty()) {
             res.append("(");
-
             boolean starting = true;
-
             for (Exclusion e : exclusions) {
                 if (!starting)
                     res.append(",");
@@ -67,7 +65,6 @@ public class Dependencies {
                 else
                     res.append("*");
             }
-
             res.append(")");
         }
 

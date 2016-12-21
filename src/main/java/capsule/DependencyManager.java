@@ -461,7 +461,7 @@ public class DependencyManager {
     }
 
     protected static List<Dependency> toDependencies(List<String> coords, String type) {
-        final List<Dependency> deps = new ArrayList<Dependency>(coords.size());
+        final List<Dependency> deps = new ArrayList<>(coords.size());
         for (String c : coords)
             deps.add(toDependency(c, type));
         return deps;
@@ -503,7 +503,7 @@ public class DependencyManager {
             return null;
 
         final List<String> exclusionPatterns = Arrays.asList(m.group("exclusions").split(","));
-        final List<Exclusion> exclusions = new ArrayList<Exclusion>();
+        final List<Exclusion> exclusions = new ArrayList<>();
         for (String ex : exclusionPatterns) {
             String[] coords = ex.trim().split(":");
             if (coords.length != 2)

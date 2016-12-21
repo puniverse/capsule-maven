@@ -140,12 +140,7 @@ public class DependencyManager {
 
         final List<RemoteRepository> rs = new ArrayList<>();
         for (final String r : repos) {
-            final RemoteRepository.Builder builder = createRepoBuilder(r);
-            setPolicies(builder, allowSnapshots);
-            setProxy(builder);
-            setAuthentication(builder);
-            final RemoteRepository repo = builder.build();
-
+            final RemoteRepository repo = createRepo(r, allowSnapshots);
             if (!rs.contains(repo))
                 rs.add(repo);
         }
@@ -251,6 +246,14 @@ public class DependencyManager {
                 }
             };
         }
+    }
+    
+    private RemoteRepository createRepo(String repo, boolean allowSnapshots) {
+        final RemoteRepository.Builder builder = createRepoBuilder(repo);
+        setPolicies(builder, allowSnapshots);
+        setProxy(builder);
+        setAuthentication(builder);
+        return builder.build();
     }
     
     private static final Pattern PAT_REPO = Pattern.compile("(?<id>[^(]+)(\\((?<url>[^\\)]+)\\))?");

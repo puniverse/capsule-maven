@@ -204,10 +204,10 @@ public class DependencyManager {
         s.setLocalRepositoryManager(system.newLocalRepositoryManager(s, localRepo));        
         s.setMirrorSelector(MVN_SETTINGS.getMirrorSelector());
         s.setAuthenticationSelector(MVN_SETTINGS.getAuthSelector());
+        final SystemProxySelector sysProxySelector; // proxy from environment variables
+        s.setProxySelector((sysProxySelector = new SystemProxySelector(logLevel)).isValid() ? sysProxySelector : MVN_SETTINGS.getProxySelector());
+        
         s.setDependencyGraphTransformer(newConflictResolver());
-
-        final SystemProxySelector sysProxySelector = new SystemProxySelector(logLevel); // proxy from environment variables
-        s.setProxySelector(sysProxySelector.isValid() ? sysProxySelector : MVN_SETTINGS.getProxySelector());
 
         if (logLevel > LOG_NONE) {
             final PrintStream out = prefixStream(System.err, LOG_PREFIX);

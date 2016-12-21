@@ -225,18 +225,19 @@ public class DependencyManager {
 //    }
     
 //    private static DependencySelector newDependencySelector() {
-//        return new org.eclipse.aether.util.graph.selector.AndDependencySelector( 
+//        return new org.eclipse.aether.util.graph.selector.AndDependencySelector(
 //                new org.eclipse.aether.util.graph.selector.ScopeDependencySelector(null, Arrays.asList(JavaScopes.TEST, JavaScopes.PROVIDED)),
-//                new org.eclipse.aether.util.graph.selector.OptionalDependencySelector(), 
-//                new org.eclipse.aether.util.graph.selector.ExclusionDependencySelector() );
+//                new org.eclipse.aether.util.graph.selector.OptionalDependencySelector(),
+//                new org.eclipse.aether.util.graph.selector.ExclusionDependencySelector()
+//        );
 //    }
     
 //    private static ConflictResolver newConflictResolver() {
 //        return new ConflictResolver(
-//            new org.eclipse.aether.util.graph.transformer.NearestVersionSelector(),
-//            new org.eclipse.aether.util.graph.transformer.JavaScopeSelector(),
-//            new org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector(),
-//            new org.eclipse.aether.util.graph.transformer.JavaScopeDeriver()
+//                new org.eclipse.aether.util.graph.transformer.NearestVersionSelector(),
+//                new org.eclipse.aether.util.graph.transformer.JavaScopeSelector(),
+//                new org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector(),
+//                new org.eclipse.aether.util.graph.transformer.JavaScopeDeriver()
 //        );
 //    }
 

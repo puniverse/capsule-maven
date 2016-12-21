@@ -82,7 +82,6 @@ public class DependencyManager {
 
     private static final String LATEST_VERSION = "[0,)";
     private static final int LOG_NONE = 0;
-    /** @noinspection unused*/
     private static final int LOG_QUIET = 1;
     private static final int LOG_VERBOSE = 2;
     private static final int LOG_DEBUG = 3;

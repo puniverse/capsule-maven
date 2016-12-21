@@ -206,7 +206,10 @@ public class DependencyManager {
         final SystemProxySelector sysProxySelector; // proxy from environment variables
         s.setProxySelector((sysProxySelector = new SystemProxySelector(logLevel)).isValid() ? sysProxySelector : MVN_SETTINGS.getProxySelector());
         
-        s.setDependencyGraphTransformer(newConflictResolver());
+        // no need for these, as they're set by MavenRepositorySystemUtils.newSession()
+//      s.setDependencyManager(newDependencyManager());
+//      s.setDependencySelector(newDependencySelector());
+//      s.setDependencyGraphTransformer(newConflictResolver());
 
         if (logLevel > LOG_NONE) {
             final PrintStream out = prefixStream(System.err, LOG_PREFIX);
@@ -217,14 +220,25 @@ public class DependencyManager {
         return s;
     }
 
-    private static ConflictResolver newConflictResolver() {
-        return new ConflictResolver(
-            new org.eclipse.aether.util.graph.transformer.NearestVersionSelector(),
-            new org.eclipse.aether.util.graph.transformer.JavaScopeSelector(),
-            new org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector(),
-            new org.eclipse.aether.util.graph.transformer.JavaScopeDeriver()
-        );
-    }
+//    private static org.eclipse.aether.collection.DependencyManager newDependencyManager() {
+//        return new org.eclipse.aether.util.graph.manager.ClassicDependencyManager();
+//    }
+    
+//    private static DependencySelector newDependencySelector() {
+//        return new org.eclipse.aether.util.graph.selector.AndDependencySelector( 
+//                new org.eclipse.aether.util.graph.selector.ScopeDependencySelector(null, Arrays.asList(JavaScopes.TEST, JavaScopes.PROVIDED)),
+//                new org.eclipse.aether.util.graph.selector.OptionalDependencySelector(), 
+//                new org.eclipse.aether.util.graph.selector.ExclusionDependencySelector() );
+//    }
+    
+//    private static ConflictResolver newConflictResolver() {
+//        return new ConflictResolver(
+//            new org.eclipse.aether.util.graph.transformer.NearestVersionSelector(),
+//            new org.eclipse.aether.util.graph.transformer.JavaScopeSelector(),
+//            new org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector(),
+//            new org.eclipse.aether.util.graph.transformer.JavaScopeDeriver()
+//        );
+//    }
 
     /** @noinspection unused*/
     public void setSystemProperties(Map<String, String> properties) {

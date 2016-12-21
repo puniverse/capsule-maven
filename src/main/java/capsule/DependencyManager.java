@@ -138,8 +138,8 @@ public class DependencyManager {
             repos = Arrays.asList("central");
 
         final List<RemoteRepository> rs = new ArrayList<>();
-        for (final String r : repos) {
-            final RemoteRepository repo = createRepo(r, allowSnapshots);
+        for (String r : repos) {
+            RemoteRepository repo = createRepo(r, allowSnapshots);
             if (!rs.contains(repo))
                 rs.add(repo);
         }

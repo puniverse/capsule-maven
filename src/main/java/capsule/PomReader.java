@@ -94,7 +94,8 @@ public final class PomReader {
     }
 
     private static String dep2coords(Dependency dep) {
-        return dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getVersion()
+        return dep.getGroupId() + ":" + dep.getArtifactId()
+               + ":" + (dep.getVersion() != null ? dep.getVersion() : "")
                + (dep.getClassifier() != null && !dep.getClassifier().isEmpty() ? ":" + dep.getClassifier() : "");
     }
 

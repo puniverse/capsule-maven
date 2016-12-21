@@ -172,8 +172,9 @@ public class MavenCapsule extends Capsule {
             // find deps in POM if not in manifest
             if ((deps == null || deps.isEmpty()) && pom != null) {
                 deps = new ArrayList<>();
-                for (String[] d : pom.getDependencies())
-                    deps.add(lookup(pom.resolve(d[0]), d[1], ATTR_DEPENDENCIES, null));
+                for (String d : pom.getDependencies("jar"))
+                    deps.add(pom.resolve(d));
+                // deps.add(lookup(pom.resolve(d), "jar", ATTR_DEPENDENCIES, null));
             }
             return (T) deps;
         }
@@ -207,11 +208,12 @@ public class MavenCapsule extends Capsule {
             final List<Object> ret = new ArrayList<>();
             ret.add(res);
             if (isDependency(s)) {
-                final Dependency dep = DependencyManager.toDependency(s, type.isEmpty() ? "jar" : type);
+                type = type.isEmpty() ? "jar" : type;
+                final Dependency dep = DependencyManager.toDependency(s, type);
                 final PomReader pom1 = createPomReader(getWritableAppCache().resolve((Path) res), getPomJarEntryName(dep));
-                if (pom1 != null && pom1.getDependencies() != null) {
-                    for (final String[] d : pom1.getDependencies())
-                        addFlat(lookup0(pom1.resolve(d[0]), d[1], ATTR_DEPENDENCIES, null), ret);
+                if (pom1 != null) {
+                    for (String d : pom1.getDependencies(type))
+                        addFlat(lookup0(pom1.resolve(d), type, attrContext, null), ret);
                 }
             }
             return ret;

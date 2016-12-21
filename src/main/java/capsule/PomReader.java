@@ -62,15 +62,15 @@ public final class PomReader {
         return repositories;
     }
 
-    public List<String[]> getDependencies() {
+    public List<String> getDependencies(String type) {
         final List<Dependency> deps = pom.getDependencies();
         if (deps == null)
             return Collections.emptyList();
 
-        final List<String[]> dependencies = new ArrayList<>(deps.size());
+        final List<String> dependencies = new ArrayList<>(deps.size());
         for (Dependency dep : deps) {
-            if (includeDependency(dep))
-                dependencies.add(new String[]{convert(dep), dep.getType()});
+            if (includeDependency(dep) && type.equals(dep.getType()))
+                dependencies.add(convert(dep));
         }
         return dependencies;
     }

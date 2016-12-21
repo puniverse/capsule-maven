@@ -11,7 +11,6 @@ package capsule;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.Exclusion;
 import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.repository.RepositoryPolicy;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -172,7 +171,6 @@ public class DependencyManagerTest {
     }
 
     private static RemoteRepository repo(String desc) {
-        final RepositoryPolicy policy = new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_NEVER, RepositoryPolicy.CHECKSUM_POLICY_WARN);
-        return DependencyManager.createRepo(desc, policy, policy);
+        return DependencyManager.createRepoBuilder(desc).build();
     }
 }

@@ -38,6 +38,8 @@ import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.collection.DependencyCollectionException;
 import org.eclipse.aether.graph.*;
 import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.eclipse.aether.repository.Authentication;
+import org.eclipse.aether.repository.AuthenticationSelector;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.Proxy;
 import org.eclipse.aether.repository.ProxySelector;
@@ -134,17 +136,11 @@ public class DependencyManager {
 
         final List<RemoteRepository> rs = new ArrayList<>();
         for (final String r : repos) {
-            RepositoryPolicy releasePolicy = makeReleasePolicy(r);
-            RepositoryPolicy snapshotPolicy = allowSnapshots ? makeSnapshotPolicy(r) : new RepositoryPolicy(false, null, null);
-
-            RemoteRepository repo = createRepo(r, releasePolicy, snapshotPolicy);
-            ProxySelector selector = getSession().getProxySelector();
-            Proxy proxy = selector.getProxy(repo);
-            if (proxy != null) {
-                if (isLogging(LOG_DEBUG))
-                    log(LOG_DEBUG, String.format("Setting proxy: '%s' for dependency: %s", proxy, repo));
-                repo = new RemoteRepository.Builder(repo).setProxy(proxy).build();
-            }
+            final RemoteRepository.Builder builder = createRepoBuilder(r);
+            setPolicies(builder, allowSnapshots);
+            setProxy(builder);
+            setAuthentication(builder);
+            final RemoteRepository repo = builder.build();
 
             if (!rs.contains(repo))
                 rs.add(repo);
@@ -206,15 +202,13 @@ public class DependencyManager {
 
         s.setOffline(offline);
         s.setUpdatePolicy(forceRefresh ? RepositoryPolicy.UPDATE_POLICY_ALWAYS : RepositoryPolicy.UPDATE_POLICY_NEVER);
-
-        s.setLocalRepositoryManager(system.newLocalRepositoryManager(s, localRepo));
-
-        SystemProxySelector sysProxySelector = new SystemProxySelector(logLevel);
-        s.setProxySelector(sysProxySelector.isValid() ? sysProxySelector : MVN_SETTINGS.getProxySelector());
+        s.setLocalRepositoryManager(system.newLocalRepositoryManager(s, localRepo));        
         s.setMirrorSelector(MVN_SETTINGS.getMirrorSelector());
         s.setAuthenticationSelector(MVN_SETTINGS.getAuthSelector());
-
         s.setDependencyGraphTransformer(newConflictResolver());
+
+        final SystemProxySelector sysProxySelector = new SystemProxySelector(logLevel); // proxy from environment variables
+        s.setProxySelector(sysProxySelector.isValid() ? sysProxySelector : MVN_SETTINGS.getProxySelector());
 
         if (logLevel > LOG_NONE) {
             final PrintStream out = prefixStream(System.err, LOG_PREFIX);
@@ -226,7 +220,7 @@ public class DependencyManager {
     }
 
     private static ConflictResolver newConflictResolver() {
-        return new ConflictResolver (
+        return new ConflictResolver(
             new org.eclipse.aether.util.graph.transformer.NearestVersionSelector(),
             new org.eclipse.aether.util.graph.transformer.JavaScopeSelector(),
             new org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector(),
@@ -253,6 +247,69 @@ public class DependencyManager {
                 }
             };
         }
+    }
+    
+    private static final Pattern PAT_REPO = Pattern.compile("(?<id>[^(]+)(\\((?<url>[^\\)]+)\\))?");
+    
+    // visible for testing
+    static RemoteRepository.Builder createRepoBuilder(String repo) {
+        final Matcher m = PAT_REPO.matcher(repo);
+        if (!m.matches())
+            throw new IllegalArgumentException("Could not parse repository: " + repo);
+
+        final String id = m.group("id");
+        String url = m.group("url");
+        if (url == null && WELL_KNOWN_REPOS.containsKey(id))
+            return createRepoBuilder(WELL_KNOWN_REPOS.get(id));
+        if (url == null)
+            url = id;
+        
+        return new RemoteRepository.Builder(id, "default", url);
+    }
+    
+    private RemoteRepository.Builder setPolicies(RemoteRepository.Builder builder, boolean allowSnapshots) {
+        final RemoteRepository tmp = builder.build(); // cheap operation
+        final String id = tmp.getId();
+        final String url = tmp.getUrl();
+        
+        RepositoryPolicy releasePolicy = makeReleasePolicy(id);
+        RepositoryPolicy snapshotPolicy = allowSnapshots ? makeSnapshotPolicy(id) : new RepositoryPolicy(false, null, null);
+        if (url.startsWith("file:")) {
+            releasePolicy = new RepositoryPolicy(releasePolicy.isEnabled(), releasePolicy.getUpdatePolicy(), RepositoryPolicy.CHECKSUM_POLICY_IGNORE);
+            snapshotPolicy = releasePolicy;
+        }
+        
+        builder.setReleasePolicy(releasePolicy)
+                .setSnapshotPolicy(snapshotPolicy);
+        return builder;
+    }
+    
+    private RemoteRepository.Builder setProxy(RemoteRepository.Builder builder) {
+        final RemoteRepository tmp = builder.build(); // cheap operation
+        
+        final ProxySelector selector = getSession().getProxySelector();
+        final Proxy proxy = selector.getProxy(tmp);
+        if (proxy != null) {
+            if (isLogging(LOG_DEBUG))
+                log(LOG_DEBUG, String.format("Setting proxy: '%s' for dependency repo: %s", proxy, tmp.toString()));
+            builder.setProxy(proxy);
+        }
+        
+        return builder;
+    }
+    
+    private RemoteRepository.Builder setAuthentication(RemoteRepository.Builder builder) {
+        final RemoteRepository tmp = builder.build(); // cheap operation
+        
+        final AuthenticationSelector authenticationSelector = getSession().getAuthenticationSelector();
+        final Authentication authentication = authenticationSelector.getAuthentication(tmp);
+        if (authentication != null) {
+            if (isLogging(LOG_DEBUG))
+                log(LOG_DEBUG, String.format("Setting authentication for dependency repo: %s", tmp.toString()));
+            builder.setAuthentication(authentication);
+        }
+        
+        return builder;
     }
     //</editor-fold>
 
@@ -321,22 +378,6 @@ public class DependencyManager {
         return resolved;
     }
 
-    private Dependency clean(Dependency d) {
-        // necessary for dependency equality
-        // SNAPSHOT dependencies get resolved to specific artifacts, so returned dependency is different from original
-        final Artifact a = d.getArtifact();
-        return new Dependency(new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getBaseVersion()),
-                d.getScope(), d.getOptional(), d.getExclusions());
-    }
-
-    private boolean equalExceptVersion(Artifact a, Artifact b) {
-        return Objects.equals(a.getGroupId(), b.getGroupId())
-                && Objects.equals(a.getArtifactId(), b.getArtifactId())
-                && Objects.equals(a.getExtension(), b.getExtension())
-                && Objects.equals(a.getClassifier(), b.getClassifier())
-                && Objects.equals(a.getBaseVersion(), b.getBaseVersion());
-    }
-
     protected List<Path> resolve(CollectRequest collectRequest) {
         final List<Path> jars = new ArrayList<>();
         for (ArtifactResult artifactResult : resolve0(collectRequest).getArtifactResults())
@@ -366,10 +407,6 @@ public class DependencyManager {
         }
     }
 
-    private static Path path(Artifact artifact) {
-        return artifact.getFile().toPath().toAbsolutePath();
-    }
-
     public final String getLatestVersion(String coords, String type) {
         return artifactToCoords(getLatestVersion0(coords, type));
     }
@@ -394,6 +431,26 @@ public class DependencyManager {
         } catch (RepositoryException e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    private static Path path(Artifact artifact) {
+        return artifact.getFile().toPath().toAbsolutePath();
+    }
+
+    private Dependency clean(Dependency d) {
+        // necessary for dependency equality
+        // SNAPSHOT dependencies get resolved to specific artifacts, so returned dependency is different from original
+        final Artifact a = d.getArtifact();
+        return new Dependency(new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getBaseVersion()),
+                d.getScope(), d.getOptional(), d.getExclusions());
+    }
+
+    private boolean equalExceptVersion(Artifact a, Artifact b) {
+        return Objects.equals(a.getGroupId(), b.getGroupId())
+               && Objects.equals(a.getArtifactId(), b.getArtifactId())
+               && Objects.equals(a.getExtension(), b.getExtension())
+               && Objects.equals(a.getClassifier(), b.getClassifier())
+               && Objects.equals(a.getBaseVersion(), b.getBaseVersion());
     }
     //</editor-fold>
 
@@ -454,28 +511,6 @@ public class DependencyManager {
             exclusions.add(new Exclusion(coords[0], coords[1], "*", "*"));
         }
         return exclusions;
-    }
-
-    private static final Pattern PAT_REPO = Pattern.compile("(?<id>[^(]+)(\\((?<url>[^\\)]+)\\))?");
-
-    // visible for testing
-    static RemoteRepository createRepo(String repo, RepositoryPolicy releasePolicy, RepositoryPolicy snapshotPolicy) {
-        final Matcher m = PAT_REPO.matcher(repo);
-        if (!m.matches())
-            throw new IllegalArgumentException("Could not parse repository: " + repo);
-
-        final String id = m.group("id");
-        String url = m.group("url");
-        if (url == null && WELL_KNOWN_REPOS.containsKey(id))
-            return createRepo(WELL_KNOWN_REPOS.get(id), releasePolicy, snapshotPolicy);
-        if (url == null)
-            url = id;
-
-        if (url.startsWith("file:")) {
-            releasePolicy = new RepositoryPolicy(releasePolicy.isEnabled(), releasePolicy.getUpdatePolicy(), RepositoryPolicy.CHECKSUM_POLICY_IGNORE);
-            snapshotPolicy = releasePolicy;
-        }
-        return new RemoteRepository.Builder(id, "default", url).setReleasePolicy(releasePolicy).setSnapshotPolicy(snapshotPolicy).build();
     }
     //</editor-fold>
 

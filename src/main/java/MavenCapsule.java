@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 import java.util.Collection;
 import static java.util.Collections.emptyList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.aether.graph.Dependency;
@@ -175,6 +176,18 @@ public class MavenCapsule extends Capsule {
                 for (String d : pom.getDependencies("jar"))
                     deps.add(pom.resolve(d));
                 // deps.add(lookup(pom.resolve(d), "jar", ATTR_DEPENDENCIES, null));
+            }
+            return (T) deps;
+        }
+
+        if (ATTR_NATIVE_DEPENDENCIES.equals(attr)) {
+            Map<Object, String> deps = (Map<Object, String>) super.attribute(ATTR_NATIVE_DEPENDENCIES);
+            
+            // find deps in POM if not in manifest
+            if ((deps == null || deps.isEmpty()) && pom != null) {
+                deps = new LinkedHashMap<>();
+                for (String d : pom.getDependencies(getNativeLibExtension()))
+                    deps.put(pom.resolve(d), "");
             }
             return (T) deps;
         }

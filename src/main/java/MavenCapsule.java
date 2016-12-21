@@ -69,7 +69,7 @@ public class MavenCapsule extends Capsule {
 
     @Override
     protected void finalizeCapsule() {
-        this.pom = createPomReader();
+        this.pom = createPomReader(getJarFile(), POM_FILE);
         if (dependencyManager != null)
             setDependencyRepositories(getAttribute(ATTR_REPOSITORIES));
 
@@ -242,10 +242,6 @@ public class MavenCapsule extends Capsule {
 
     //<editor-fold defaultstate="collapsed" desc="Internal Methods">
     /////////// Internal Methods ///////////////////////////////////
-    private PomReader createPomReader() {
-        return createPomReader(getJarFile(), POM_FILE);
-    }
-
     private PomReader createPomReader(Path jarFile, String entry) {
         try (InputStream is = getEntryInputStream(jarFile, entry)) {
             return is != null ? new PomReader(is) : null;

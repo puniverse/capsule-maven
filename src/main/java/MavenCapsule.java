@@ -29,6 +29,8 @@ import org.eclipse.aether.graph.Dependency;
  * @author pron
  */
 public class MavenCapsule extends Capsule {
+    public static final String VERSION = "1.0.4";
+    
     private static final String PROP_TREE = OPTION("capsule.tree", "false", "printDependencyTree", "Prints the capsule's dependency tree.");
     private static final String PROP_RESOLVE = OPTION("capsule.resolve", "false", "resolve", "Downloads all un-cached dependencies.");
     private static final String PROP_USE_LOCAL_REPO = OPTION("capsule.local", null, null, "Sets the path of the local Maven repository to use.");

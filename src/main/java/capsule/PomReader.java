@@ -9,7 +9,10 @@
 package capsule;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
@@ -33,15 +36,11 @@ public final class PomReader {
     }
 
     public String getGroupId() {
-        return
-            pom.getGroupId() != null ?
-                pom.getGroupId() : (pom.getParent() != null ? pom.getParent().getGroupId() : null);
+        return pom.getGroupId() != null ? pom.getGroupId() : (pom.getParent() != null ? pom.getParent().getGroupId() : null);
     }
 
     public String getVersion() {
-        return
-            pom.getVersion() != null ?
-                pom.getVersion() : (pom.getParent() != null ? pom.getParent().getVersion() : null);
+        return pom.getVersion() != null ? pom.getVersion() : (pom.getParent() != null ? pom.getParent().getVersion() : null);
     }
 
     public String getId() {
@@ -55,7 +54,8 @@ public final class PomReader {
     public List<String> getRepositories() {
         final List<Repository> repos = pom.getRepositories();
         if (repos == null)
-            return null;
+            return Collections.emptyList();
+            
         final List<String> repositories = new ArrayList<>(repos.size());
         for (Repository repo : repos)
             repositories.add(convert(repo));
@@ -65,7 +65,7 @@ public final class PomReader {
     public List<String[]> getDependencies() {
         final List<Dependency> deps = pom.getDependencies();
         if (deps == null)
-            return null;
+            return Collections.emptyList();
 
         final List<String[]> dependencies = new ArrayList<>(deps.size());
         for (Dependency dep : deps) {
@@ -95,7 +95,7 @@ public final class PomReader {
 
     private static String dep2coords(Dependency dep) {
         return dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getVersion()
-                + (dep.getClassifier() != null && !dep.getClassifier().isEmpty() ? ":" + dep.getClassifier() : "");
+               + (dep.getClassifier() != null && !dep.getClassifier().isEmpty() ? ":" + dep.getClassifier() : "");
     }
 
     private static String exclusions2desc(Dependency dep) {
@@ -133,10 +133,10 @@ public final class PomReader {
             ret = ret.replace("${project.groupId}", getGroupId()).replace("${pom.groupId}", getGroupId());
         if (getVersion() != null)
             ret = ret
-                .replace("${project.version}", getVersion())
-                .replace("${pom.version}", getVersion())
-                .replace("${version}", getVersion());
-        for(final String pName : ps.stringPropertyNames())
+                    .replace("${project.version}", getVersion())
+                    .replace("${pom.version}", getVersion())
+                    .replace("${version}", getVersion());
+        for (String pName : ps.stringPropertyNames())
             ret = ret.replace("${" + pName + "}", ps.getProperty(pName));
         return ret;
     }

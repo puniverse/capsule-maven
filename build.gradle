@@ -42,7 +42,7 @@ ext.takariFilemanVer    = '0.8.3'
 ext.mavenGuavaVer       = '20.0'
 
 ext.junitVer            = '4.12'
-ext.testGuavaVer        = '19.0'
+ext.testGuavaVer        = '20.0'
 ext.truthVer            = '0.30'
 ext.jimfsVer            = '1.1'
 ext.mockitoVer          = '1.10.19'

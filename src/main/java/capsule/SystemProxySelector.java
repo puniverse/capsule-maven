@@ -1,3 +1,11 @@
+/*
+ * Capsule
+ * Copyright (c) 2014-2016, Parallel Universe Software Co. All rights reserved.
+ * 
+ * This program and the accompanying materials are licensed under the terms 
+ * of the Eclipse Public License v1.0, available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package capsule;
 
 import java.util.Map;
@@ -18,7 +26,7 @@ import org.eclipse.aether.util.repository.DefaultProxySelector;
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  * @author adrien.lauer@gmail.com
  */
-public class SystemProxySelector implements ProxySelector {
+final class SystemProxySelector implements ProxySelector {
     private static final int LOG_NONE = 0;
     private static final int LOG_QUIET = 1;
     private static final int LOG_VERBOSE = 2;

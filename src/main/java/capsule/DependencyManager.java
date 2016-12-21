@@ -489,7 +489,7 @@ public class DependencyManager {
         final String artifactId = m.group("artifactId");
         String version = m.group("version");
         if (version == null || version.isEmpty())
-            version = LATEST_VERSION;
+            version = null; // throw new IllegalArgumentException("No version information is provided for dependency " + depString);
         final String classifier = m.group("classifier");
         return new DefaultArtifact(groupId, artifactId, classifier, type, version);
     }

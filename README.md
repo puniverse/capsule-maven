@@ -68,7 +68,7 @@ The `CAPSULE_REPOS` environment variable can be set to a *comma-* (`,`) or a whi
 
 By default, SNAPSHOT dependencies are not allowed, unless the `Allow-Snapshots` is set to `true`.
 
-Maven [version ranges](http://maven.apache.org/enforcer/enforcer-rules/versionRanges.html) (as well as `LATEST` and `RELEASE`) are supported. For example: `Application: com.acme:foo:[1.0,2.0)`. The newest version matching the range (or the newest version if no range is given), will be downloaded, cached and launched. Not specifying a version at all will resolve to the latest release. If the application's main artifact is a capsule, then all configurations will be taken based on those in the artifact capsule.
+Maven [version ranges](http://maven.apache.org/enforcer/enforcer-rules/versionRanges.html) (as well as `LATEST` and `RELEASE`) are supported. For example: `Application: com.acme:foo:[1.0,2.0)`. The newest version matching the range (or the newest version if no range is given), will be downloaded, cached and launched. Not specifying version information at all will result in a failure during dependency resolution. If the application's main artifact is a capsule, then all configurations will be taken based on those in the artifact capsule.
 
 ### Dependency Caching
 

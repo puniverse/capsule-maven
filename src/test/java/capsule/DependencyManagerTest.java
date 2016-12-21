@@ -40,14 +40,14 @@ public class DependencyManagerTest {
         dep = dep("com.acme:foo");
         assertEquals("com.acme", dep.getArtifact().getGroupId());
         assertEquals("foo", dep.getArtifact().getArtifactId());
-        assertEquals("[0,)", dep.getArtifact().getVersion());
+        assertEquals("", dep.getArtifact().getVersion());
         assertEquals("", dep.getArtifact().getClassifier());
         assertEquals(0, dep.getExclusions().size());
 
         dep = dep("com.acme:foo::jdk8");
         assertEquals("com.acme", dep.getArtifact().getGroupId());
         assertEquals("foo", dep.getArtifact().getArtifactId());
-        assertEquals("[0,)", dep.getArtifact().getVersion());
+        assertEquals("", dep.getArtifact().getVersion());
         assertEquals("jdk8", dep.getArtifact().getClassifier());
         assertEquals(0, dep.getExclusions().size());
 
@@ -76,7 +76,7 @@ public class DependencyManagerTest {
         dep = dep("com.acme:foo(org.apache:log4j,javax.jms:jms-api)");
         assertEquals("com.acme", dep.getArtifact().getGroupId());
         assertEquals("foo", dep.getArtifact().getArtifactId());
-        assertEquals("[0,)", dep.getArtifact().getVersion());
+        assertEquals("", dep.getArtifact().getVersion());
         assertEquals("", dep.getArtifact().getClassifier());
         assertEquals(2, dep.getExclusions().size());
         assertEquals("org.apache", exc(dep, 0).getGroupId());
@@ -87,7 +87,7 @@ public class DependencyManagerTest {
         dep = dep("com.acme:foo::jdk8(org.apache:log4j,javax.jms:jms-api)");
         assertEquals("com.acme", dep.getArtifact().getGroupId());
         assertEquals("foo", dep.getArtifact().getArtifactId());
-        assertEquals("[0,)", dep.getArtifact().getVersion());
+        assertEquals("", dep.getArtifact().getVersion());
         assertEquals("jdk8", dep.getArtifact().getClassifier());
         assertEquals(2, dep.getExclusions().size());
         assertEquals("org.apache", exc(dep, 0).getGroupId());
@@ -117,10 +117,10 @@ public class DependencyManagerTest {
         assertEquals("javax.jms", exc(dep, 1).getGroupId());
         assertEquals("jms-api", exc(dep, 1).getArtifactId());
 
-        dep = dep("com.acme:foo(org.apache:log4j,javax.jms:jms-api)");
+        dep = dep("com.acme:foo:(org.apache:log4j,javax.jms:jms-api)");
         assertEquals("com.acme", dep.getArtifact().getGroupId());
         assertEquals("foo", dep.getArtifact().getArtifactId());
-        assertEquals("[0,)", dep.getArtifact().getVersion());
+        assertEquals("", dep.getArtifact().getVersion());
         assertEquals("", dep.getArtifact().getClassifier());
         assertEquals(2, dep.getExclusions().size());
         assertEquals("org.apache", exc(dep, 0).getGroupId());

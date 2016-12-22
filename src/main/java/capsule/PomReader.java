@@ -9,9 +9,12 @@
 package capsule;
 
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 import org.apache.maven.model.Dependency;
@@ -22,13 +25,57 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 
 public final class PomReader {
     private final Model pom;
+    private final PomReader root;
+    private final MavenCapsule capsule;
+    private PomReader parent;
 
-    public PomReader(InputStream is) {
+    public PomReader(InputStream is, PomReader root, MavenCapsule capsule) {
         try {
             this.pom = new MavenXpp3Reader().read(is);
+            this.root = root;
+            this.capsule = capsule;
         } catch (Exception e) {
             throw new RuntimeException("Error trying to read pom.", e);
         }
+    }
+
+//    public PomReader(InputStream is) {
+//        this(is, null, null);
+//    }
+    
+    private PomReader getParent() {
+        if (parent == null)
+            parent = resolveParent();
+        return parent;
+    }
+
+    private PomReader resolveParent() {
+        if (pom.getParent() == null)
+            return null;
+
+        final String group = pom.getParent().getGroupId();
+        final String artifactId = pom.getParent().getArtifactId();
+        final String version = pom.getParent().getVersion();
+
+        if (root != null
+            && Objects.equals(group, root.getGroupId())
+            && Objects.equals(artifactId, root.getArtifactId())
+            && Objects.equals(version, root.getVersion()))
+            return root;
+
+        if (capsule != null) {
+            try {
+                final String coords = group + ":" + artifactId + ":" + version;
+                final List<Path> ps = capsule.lookupAndResolve(coords, "pom");
+                if (!ps.isEmpty())
+                    return new PomReader(Files.newInputStream(ps.get(0)), root, capsule);
+            } catch (Exception e) {
+                capsule.log1(MavenCapsule.LOG_QUIET1, "Exception while resolving parent " + pom.getParent() + " of pom " + pom + " : " + e.getMessage());
+                capsule.log1(MavenCapsule.LOG_VERBOSE1, e);
+            }
+        }
+
+        return null;
     }
 
     public String getArtifactId() {
@@ -55,7 +102,7 @@ public final class PomReader {
         final List<Repository> repos = pom.getRepositories();
         if (repos == null)
             return Collections.emptyList();
-            
+
         final List<String> repositories = new ArrayList<>(repos.size());
         for (Repository repo : repos)
             repositories.add(convert(repo));
@@ -70,9 +117,30 @@ public final class PomReader {
         final List<String> dependencies = new ArrayList<>(deps.size());
         for (Dependency dep : deps) {
             if (includeDependency(dep) && type.equals(dep.getType()))
-                dependencies.add(convert(dep));
+                dependencies.add(convert(resolveVersion(dep)));
         }
         return dependencies;
+    }
+
+    private Dependency resolveVersion(Dependency dep) {
+        if (dep.getVersion() != null)
+            return dep;
+
+        final List<Dependency> deps = pom.getDependencyManagement().getDependencies();
+        for (Dependency d : deps) {
+            if (Objects.equals(d.getManagementKey(), dep.getManagementKey())) {
+                dep.setVersion(d.getVersion());
+                break;
+            }
+        }
+
+        if (dep.getVersion() != null)
+            return dep;
+
+        if (getParent() != null)
+            return getParent().resolveVersion(dep);
+
+        return dep;
     }
 
     private static boolean includeDependency(Dependency dep) {

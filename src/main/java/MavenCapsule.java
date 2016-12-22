@@ -29,7 +29,8 @@ import org.eclipse.aether.graph.Dependency;
  *
  * @author pron
  */
-public class MavenCapsule extends Capsule {
+public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
+    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
     public static final String VERSION = "1.0.4";
     
     private static final String PROP_TREE = OPTION("capsule.tree", "false", "printDependencyTree", "Prints the capsule's dependency tree.");
@@ -70,7 +71,7 @@ public class MavenCapsule extends Capsule {
 
     @Override
     protected void finalizeCapsule() {
-        this.pom = createPomReader(getJarFile(), POM_FILE);
+        this.pom = createPomReader(getJarFile(), POM_FILE, null);
         if (dependencyManager != null)
             setDependencyRepositories(getAttribute(ATTR_REPOSITORIES));
 
@@ -223,7 +224,7 @@ public class MavenCapsule extends Capsule {
             if (isDependency(s)) {
                 type = type.isEmpty() ? "jar" : type;
                 final Dependency dep = DependencyManager.toDependency(s, type);
-                final PomReader pom1 = createPomReader(getWritableAppCache().resolve((Path) res), getPomJarEntryName(dep));
+                final PomReader pom1 = createPomReader(getWritableAppCache().resolve((Path) res), getPomJarEntryName(dep), pom);
                 if (pom1 != null) {
                     for (String d : pom1.getDependencies(type))
                         addFlat(lookup0(pom1.resolve(d), type, attrContext, null), ret);
@@ -257,9 +258,30 @@ public class MavenCapsule extends Capsule {
 
     //<editor-fold defaultstate="collapsed" desc="Internal Methods">
     /////////// Internal Methods ///////////////////////////////////
-    private PomReader createPomReader(Path jarFile, String entry) {
+    
+    @Override
+    public List<Path> lookupAndResolve(String x, String type) {
+        return resolve(lookup(x, type, null, null));
+    }
+    
+    @Override
+    public boolean isLogging1(int level) {
+        return isLogging(level);
+    }
+
+    @Override
+    public void log1(int level, String str) {
+        log(level, str);
+    }
+
+    @Override
+    public void log1(int level, Throwable t) {
+        log(level, t);
+    }
+    
+    private PomReader createPomReader(Path jarFile, String entry, PomReader root) {
         try (InputStream is = getEntryInputStream(jarFile, entry)) {
-            return is != null ? new PomReader(is) : null;
+            return is != null ? new PomReader(is, root, this) : null;
         } catch (IOException e) {
             throw new RuntimeException("Could not read " + entry, e);
         }

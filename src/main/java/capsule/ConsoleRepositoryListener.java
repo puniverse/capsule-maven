@@ -1,6 +1,6 @@
 /*
  * Capsule
- * Copyright (c) 2014-2015, Parallel Universe Software Co. All rights reserved.
+ * Copyright (c) 2014-2016, Parallel Universe Software Co. All rights reserved.
  * 
  * This program and the accompanying materials are licensed under the terms 
  * of the Eclipse Public License v1.0, available at
@@ -33,7 +33,7 @@ public final class ConsoleRepositoryListener extends AbstractRepositoryListener 
 
     @Override public void artifactDownloading(RepositoryEvent ev) {
         if (!verbose)
-            println("Downloading dependency " + ev.getArtifact());
+            println("Downloading artifact " + ev.getArtifact());
         else
             println("Downloading artifact " + ev.getArtifact() + " from " + ev.getRepository());
     }

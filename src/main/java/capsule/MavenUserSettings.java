@@ -40,7 +40,7 @@ import org.sonatype.plexus.components.sec.dispatcher.DefaultSecDispatcher;
 /**
  * Reads Maven's settings.xml
  */
-final class UserSettings {
+final class MavenUserSettings {
     private static final String SETTINGS_XML = "settings.xml";
     private static final String ENV_MAVEN_HOME = "M2_HOME";
     private static final String PROP_MAVEN_HOME = "maven.home";
@@ -48,16 +48,16 @@ final class UserSettings {
 
     private static final Path MAVEN_HOME = getMavenHome();
 
-    private static final UserSettings INSTANCE = new UserSettings();
+    private static final MavenUserSettings INSTANCE = new MavenUserSettings();
 
     private final Settings settings;
     private final Path repositoryHome;
 
-    public static UserSettings getInstance() {
+    public static MavenUserSettings getInstance() {
         return INSTANCE;
     }
 
-    private UserSettings() {
+    private MavenUserSettings() {
         final DefaultSettingsBuildingRequest request = new DefaultSettingsBuildingRequest();
         request.setUserSettingsFile(DEFAULT_LOCAL_MAVEN.resolve(SETTINGS_XML).toFile());
         request.setGlobalSettingsFile(MAVEN_HOME != null ? MAVEN_HOME.resolve("conf").resolve(SETTINGS_XML).toFile() : null);

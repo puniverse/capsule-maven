@@ -87,7 +87,7 @@ public class DependencyManager {
     public static final int LOG_DEBUG = 3;
     private static final String LOG_PREFIX = "CAPSULE: ";
 
-    private static final UserSettings MVN_SETTINGS = UserSettings.getInstance();
+    private static final MavenUserSettings MVN_SETTINGS = MavenUserSettings.getInstance();
 
     static final Map<String, String> WELL_KNOWN_REPOS = unmodifiableMap(new HashMap<String, String>() {
         {
@@ -196,7 +196,7 @@ public class DependencyManager {
         s.setMirrorSelector(MVN_SETTINGS.getMirrorSelector());
         s.setAuthenticationSelector(MVN_SETTINGS.getAuthSelector());
         final SystemProxySelector sysProxySelector; // proxy from environment variables
-        s.setProxySelector((sysProxySelector = new SystemProxySelector(logLevel)).isValid() ? sysProxySelector : MVN_SETTINGS.getProxySelector());
+        s.setProxySelector((sysProxySelector = new SystemProxySelector(this)).isValid() ? sysProxySelector : MVN_SETTINGS.getProxySelector());
         
         // no need for these, as they're set by MavenRepositorySystemUtils.newSession()
 //      s.setDependencyManager(newDependencyManager());
@@ -563,11 +563,11 @@ public class DependencyManager {
 
     //<editor-fold defaultstate="collapsed" desc="Logging">
     /////////// Logging ///////////////////////////////////
-    private final boolean isLogging(int level) {
+    final boolean isLogging(int level) {
         return level <= logLevel;
     }
 
-    private final void log(int level, String str) {
+    final void log(int level, String str) {
         if (isLogging(level))
             System.err.println(LOG_PREFIX + str);
     }

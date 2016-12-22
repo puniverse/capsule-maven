@@ -17,6 +17,8 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.util.repository.AuthenticationBuilder;
 import org.eclipse.aether.util.repository.DefaultProxySelector;
 
+import static capsule.DependencyManager.LOG_VERBOSE;
+
 /**
  * A proxy selector that uses proxy configuration defined
  * in the system environment configuration and Java
@@ -27,13 +29,7 @@ import org.eclipse.aether.util.repository.DefaultProxySelector;
  * @author adrien.lauer@gmail.com
  */
 final class SystemProxySelector implements ProxySelector {
-    private static final int LOG_NONE = 0;
-    private static final int LOG_QUIET = 1;
-    private static final int LOG_VERBOSE = 2;
-    private static final int LOG_DEBUG = 3;
-    private static final String LOG_PREFIX = "CAPSULE: ";
-    private final int logLevel;
-
+    private final DependencyManager dm;
     private final DefaultProxySelector target = new DefaultProxySelector();
     private final Map<String, String> env;
     private final Properties props;
@@ -52,15 +48,15 @@ final class SystemProxySelector implements ProxySelector {
      *
      * @param logLevel Capsule logging level
      */
-    public SystemProxySelector(int logLevel) {
-        this(System.getenv(), System.getProperties(), logLevel);
+    public SystemProxySelector(DependencyManager dm) {
+        this(System.getenv(), System.getProperties(), dm);
     }
 
     @SuppressWarnings("OverridableMethodCallInConstructor")
-    SystemProxySelector(Map env, Properties props, int logLevel) {
+    SystemProxySelector(Map env, Properties props, DependencyManager dm) {
         this.env = env;
         this.props = props;
-        this.logLevel = logLevel;
+        this.dm = dm;
         init();
     }
 
@@ -109,9 +105,7 @@ final class SystemProxySelector implements ProxySelector {
         target.add(proxy, noProxy);
         count++;
 
-        // dump proxy information to logger
-        if (isLogging(LOG_VERBOSE))
-            log(LOG_VERBOSE, String.format("Adding `%s` proxy: %s [from system environment]", type, proxy));
+        log(LOG_VERBOSE, String.format("Adding `%s` proxy: %s [from system environment]", type, proxy));
 
     }
 
@@ -145,9 +139,7 @@ final class SystemProxySelector implements ProxySelector {
         target.add(proxy, nonProxy);
         count++;
 
-        // dump proxy information to logger
-        if (isLogging(LOG_VERBOSE))
-            log(LOG_VERBOSE, String.format("Adding `%s` proxy: %s [from Java system properties]", type, proxy));
+        log(LOG_VERBOSE, String.format("Adding `%s` proxy: %s [from Java system properties]", type, proxy));
     }
 
     /**
@@ -248,13 +240,9 @@ final class SystemProxySelector implements ProxySelector {
         return true;
     }
 
-    protected final boolean isLogging(int level) {
-        return level <= logLevel;
-    }
-
-    protected final void log(int level, String str) {
-        if (isLogging(level))
-            System.err.println(LOG_PREFIX + str);
+    private void log(int level, String str) {
+        if (dm != null)
+            dm.log(level, str);
     }
 
     protected void checkValidProtocol(String protocol) {

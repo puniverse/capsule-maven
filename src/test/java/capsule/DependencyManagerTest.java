@@ -151,7 +151,7 @@ public class DependencyManagerTest {
 
         repo = repo("local");
         assertEquals("local", repo.getId());
-        assertEquals("file:" + UserSettings.getInstance().getRepositoryHome(), repo.getUrl());
+        assertEquals("file:" + MavenUserSettings.getInstance().getRepositoryHome(), repo.getUrl());
 
         repo = repo("http://foo.com");
         assertEquals("http://foo.com", repo.getId());

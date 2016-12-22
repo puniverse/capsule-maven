@@ -25,7 +25,7 @@ public class SystemProxySelectorTest {
         env.put("http_proxy", "my.proxy.com:8080");
         env.put("https_proxy", "secure.proxy.com:8888");
 
-        SystemProxySelector selector = new SystemProxySelector(env, new Properties(), 2);
+        SystemProxySelector selector = new SystemProxySelector(env, new Properties(), null);
         assertEquals(2, selector.getCount());
 
         RemoteRepository repo = new RemoteRepository.Builder("bar", null, "https://oss.sonatype.org/service/foo-bar-0.14.3.jar").build();
@@ -47,7 +47,7 @@ public class SystemProxySelectorTest {
         env.put("http_proxy", "http://my.proxy.com");
         env.put("https_proxy", "https://secure.proxy.com");
 
-        SystemProxySelector selector = new SystemProxySelector(env, new Properties(), 0);
+        SystemProxySelector selector = new SystemProxySelector(env, new Properties(), null);
         assertEquals(2, selector.getCount());
 
         RemoteRepository repo = new RemoteRepository.Builder("bar", null, "https://oss.sonatype.org/service/foo-bar-0.14.3.jar").build();
@@ -70,7 +70,7 @@ public class SystemProxySelectorTest {
         env.put("https_proxy", "https://secure.proxy.com");
         env.put("no_proxy", "*.foo.com,localhost");
 
-        SystemProxySelector selector = new SystemProxySelector(env, new Properties(), 2);
+        SystemProxySelector selector = new SystemProxySelector(env, new Properties(), null);
         assertEquals(2, selector.getCount());
 
         RemoteRepository repo = new RemoteRepository.Builder("bar", null, "http://localhost/service/foo-bar-0.14.3.jar").build();
@@ -89,7 +89,7 @@ public class SystemProxySelectorTest {
         Map<String, String> env = new HashMap<>();
         env.put("https_proxy", "https://user:password@secure.proxy.com");
 
-        SystemProxySelector selector = new SystemProxySelector(env, new Properties(), 2);
+        SystemProxySelector selector = new SystemProxySelector(env, new Properties(), null);
         assertEquals(1, selector.getCount());
 
         RemoteRepository repo = new RemoteRepository.Builder("bar", null, "https://oss.sonatype.org/service/foo-bar-0.14.3.jar").build();
@@ -109,7 +109,7 @@ public class SystemProxySelectorTest {
         props.setProperty("https.proxyUser", "user");
         props.setProperty("https.proxyPassword", "password");
 
-        SystemProxySelector selector = new SystemProxySelector(new HashMap(), props, 0);
+        SystemProxySelector selector = new SystemProxySelector(new HashMap(), props, null);
         assertEquals(1, selector.getCount());
 
         RemoteRepository repo = new RemoteRepository.Builder("bar", null, "https://oss.sonatype.org/service/foo-bar-0.14.3.jar").build();
@@ -127,7 +127,7 @@ public class SystemProxySelectorTest {
         props.setProperty("http.proxyHost", "foo.host.name");
         props.setProperty("https.proxyHost", "secure.host.name");
 
-        SystemProxySelector selector = new SystemProxySelector(new HashMap(), props, 0);
+        SystemProxySelector selector = new SystemProxySelector(new HashMap(), props, null);
         assertEquals(2, selector.getCount());
 
         RemoteRepository repo = new RemoteRepository.Builder("bar", null, "https://oss.sonatype.org/service/foo-bar-0.14.3.jar").build();
@@ -159,7 +159,7 @@ public class SystemProxySelectorTest {
 
         // it must use the proxy defined in the system properties
         // because it is supposed to override the one defined with environment variables
-        SystemProxySelector selector = new SystemProxySelector(env, props, 2);
+        SystemProxySelector selector = new SystemProxySelector(env, props, null);
         assertEquals(4, selector.getCount());
 
         RemoteRepository repo = new RemoteRepository.Builder("bar", null, "https://oss.sonatype.org/service/foo-bar-0.14.3.jar").build();

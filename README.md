@@ -74,7 +74,7 @@ Maven [version ranges](http://maven.apache.org/enforcer/enforcer-rules/versionRa
 
 Maven artifacts are downloaded the first time the capsule is launched, and placed in the `deps` subdirectory of the Capsule cache, where they are shared among all capsules using the Maven caplet.
 
-# Miscellany
+### Miscellany
 
 Adding `-Dcapsule.reset=true`, can force a re-download of SNAPSHOT versions.
 

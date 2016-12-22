@@ -81,10 +81,10 @@ public class DependencyManager {
     static final Path DEFAULT_LOCAL_MAVEN = Paths.get(System.getProperty(PROP_USER_HOME), ".m2");
 
     private static final String LATEST_VERSION = "[0,)";
-    private static final int LOG_NONE = 0;
-    private static final int LOG_QUIET = 1;
-    private static final int LOG_VERBOSE = 2;
-    private static final int LOG_DEBUG = 3;
+    public static final int LOG_NONE = 0;
+    public static final int LOG_QUIET = 1;
+    public static final int LOG_VERBOSE = 2;
+    public static final int LOG_DEBUG = 3;
     private static final String LOG_PREFIX = "CAPSULE: ";
 
     private static final UserSettings MVN_SETTINGS = UserSettings.getInstance();

@@ -7,7 +7,7 @@
  */
 
 import capsule.DependencyManager;
-import capsule.PomReader;
+import capsule.Pom;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.AccessibleObject;
@@ -52,7 +52,7 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
     private static final String DEPS_CACHE_NAME = "deps";
 
     private DependencyManager dependencyManager;
-    private PomReader pom;
+    private Pom pom;
     private Path localRepo;
     private String version; // app version cache
 
@@ -224,7 +224,7 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
             if (isDependency(s)) {
                 type = type.isEmpty() ? "jar" : type;
                 final Dependency dep = DependencyManager.toDependency(s, type);
-                final PomReader pom1 = createPomReader(getWritableAppCache().resolve((Path) res), getPomJarEntryName(dep), pom);
+                final Pom pom1 = createPomReader(getWritableAppCache().resolve((Path) res), getPomJarEntryName(dep), pom);
                 if (pom1 != null) {
                     for (String d : pom1.getDependencies(type))
                         addFlat(lookup0(pom1.resolve(d), type, attrContext, null), ret);
@@ -279,9 +279,9 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
         log(level, t);
     }
     
-    private PomReader createPomReader(Path jarFile, String entry, PomReader root) {
+    private Pom createPomReader(Path jarFile, String entry, Pom root) {
         try (InputStream is = getEntryInputStream(jarFile, entry)) {
-            return is != null ? new PomReader(is, root, this) : null;
+            return is != null ? new Pom(is, root, this) : null;
         } catch (IOException e) {
             throw new RuntimeException("Could not read " + entry, e);
         }

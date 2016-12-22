@@ -23,13 +23,13 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Repository;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 
-public final class PomReader {
+public final class Pom {
     private final Model pom;
-    private final PomReader root;
+    private final Pom root;
     private final MavenCapsule capsule;
-    private PomReader parent;
+    private Pom parent;
 
-    public PomReader(InputStream is, PomReader root, MavenCapsule capsule) {
+    public Pom(InputStream is, Pom root, MavenCapsule capsule) {
         try {
             this.pom = new MavenXpp3Reader().read(is);
             this.root = root;
@@ -43,13 +43,13 @@ public final class PomReader {
 //        this(is, null, null);
 //    }
     
-    private PomReader getParent() {
+    private Pom getParent() {
         if (parent == null)
             parent = resolveParent();
         return parent;
     }
 
-    private PomReader resolveParent() {
+    private Pom resolveParent() {
         if (pom.getParent() == null)
             return null;
 
@@ -68,7 +68,7 @@ public final class PomReader {
                 final String coords = group + ":" + artifactId + ":" + version;
                 final List<Path> ps = capsule.lookupAndResolve(coords, "pom");
                 if (!ps.isEmpty())
-                    return new PomReader(Files.newInputStream(ps.get(0)), root, capsule);
+                    return new Pom(Files.newInputStream(ps.get(0)), root, capsule);
             } catch (Exception e) {
                 capsule.log1(MavenCapsule.LOG_QUIET1, "Exception while resolving parent " + pom.getParent() + " of pom " + pom + " : " + e.getMessage());
                 capsule.log1(MavenCapsule.LOG_VERBOSE1, e);

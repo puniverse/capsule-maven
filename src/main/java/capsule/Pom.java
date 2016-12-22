@@ -22,6 +22,7 @@ import org.apache.maven.model.Exclusion;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Repository;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.eclipse.aether.util.artifact.JavaScopes;
 
 public final class Pom {
     private final Model pom;
@@ -149,8 +150,8 @@ public final class Pom {
         if (dep.getScope() == null || dep.getScope().isEmpty())
             return true;
         switch (dep.getScope().toLowerCase()) {
-            case "compile":
-            case "runtime":
+            case JavaScopes.COMPILE:
+            case JavaScopes.RUNTIME:
                 return true;
             default:
                 return false;

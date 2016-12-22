@@ -143,11 +143,11 @@ public class DependencyManager {
     }
 
     /** @noinspection UnusedParameters*/
-    protected RepositoryPolicy makeReleasePolicy(String repo) {
+    private RepositoryPolicy makeReleasePolicy(String repo) {
         return new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_NEVER, RepositoryPolicy.CHECKSUM_POLICY_WARN);
     }
 
-    protected RepositoryPolicy makeSnapshotPolicy(String repo) {
+    private RepositoryPolicy makeSnapshotPolicy(String repo) {
         return makeReleasePolicy(repo);
     }
 
@@ -175,13 +175,13 @@ public class DependencyManager {
         return locator.getService(RepositorySystem.class);
     }
 
-    public RepositorySystemSession getSession() {
+    private RepositorySystemSession getSession() {
         if (session == null)
             session = newRepositorySession(system, localRepo);
         return session;
     }
 
-    protected RepositorySystemSession newRepositorySession(RepositorySystem system, LocalRepository localRepo) {
+    private RepositorySystemSession newRepositorySession(RepositorySystem system, LocalRepository localRepo) {
         final DefaultRepositorySystemSession s = MavenRepositorySystemUtils.newSession();
 
         s.setConfigProperty(ConfigurationProperties.CONNECT_TIMEOUT, propertyOrEnv(PROP_CONNECT_TIMEOUT, ENV_CONNECT_TIMEOUT));
@@ -385,14 +385,14 @@ public class DependencyManager {
         return resolved;
     }
 
-    protected List<Path> resolve(CollectRequest collectRequest) {
+    private List<Path> resolve(CollectRequest collectRequest) {
         final List<Path> jars = new ArrayList<>();
         for (ArtifactResult artifactResult : resolve0(collectRequest).getArtifactResults())
             jars.add(path(artifactResult.getArtifact()));
         return jars;
     }
 
-    protected DependencyResult resolve0(CollectRequest collectRequest) {
+    private DependencyResult resolve0(CollectRequest collectRequest) {
         if (isLogging(LOG_DEBUG))
             log(LOG_DEBUG, "DependencyManager.resolve " + collectRequest);
         try {
@@ -563,11 +563,11 @@ public class DependencyManager {
 
     //<editor-fold defaultstate="collapsed" desc="Logging">
     /////////// Logging ///////////////////////////////////
-    protected final boolean isLogging(int level) {
+    private final boolean isLogging(int level) {
         return level <= logLevel;
     }
 
-    protected final void log(int level, String str) {
+    private final void log(int level, String str) {
         if (isLogging(level))
             System.err.println(LOG_PREFIX + str);
     }

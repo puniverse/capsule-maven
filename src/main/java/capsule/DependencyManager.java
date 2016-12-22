@@ -87,15 +87,7 @@ public class DependencyManager {
     private static final int LOG_DEBUG = 3;
     private static final String LOG_PREFIX = "CAPSULE: ";
 
-    private static final UserSettings MVN_SETTINGS;
-    static {
-        try {
-            MVN_SETTINGS = UserSettings.getInstance();
-        } catch (final Throwable t) {
-            t.printStackTrace();
-            throw t;
-        }
-    }
+    private static final UserSettings MVN_SETTINGS = UserSettings.getInstance();
 
     static final Map<String, String> WELL_KNOWN_REPOS = unmodifiableMap(new HashMap<String, String>() {
         {

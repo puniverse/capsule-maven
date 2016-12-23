@@ -139,6 +139,7 @@ public class DependencyManagerTest {
         assertEquals("war", dep.getArtifact().getExtension());
         assertEquals("jdk8", dep.getArtifact().getClassifier());
         assertEquals("1.3", dep.getArtifact().getVersion());
+        assertEquals(false, dep.isOptional());
         assertEquals(0, dep.getExclusions().size());
 
         dep = mandep("com.acme:foo::jdk8:1.3");
@@ -147,6 +148,7 @@ public class DependencyManagerTest {
         assertEquals("", dep.getArtifact().getExtension());
         assertEquals("jdk8", dep.getArtifact().getClassifier());
         assertEquals("1.3", dep.getArtifact().getVersion());
+        assertEquals(false, dep.isOptional());
         assertEquals(0, dep.getExclusions().size());
 
         dep = mandep("com.acme:foo:war::1.3");
@@ -155,6 +157,7 @@ public class DependencyManagerTest {
         assertEquals("war", dep.getArtifact().getExtension());
         assertEquals("", dep.getArtifact().getClassifier());
         assertEquals("1.3", dep.getArtifact().getVersion());
+        assertEquals(false, dep.isOptional());
         assertEquals(0, dep.getExclusions().size());
 
         dep = mandep("com.acme:foo:::1.3");
@@ -163,6 +166,16 @@ public class DependencyManagerTest {
         assertEquals("", dep.getArtifact().getExtension());
         assertEquals("", dep.getArtifact().getClassifier());
         assertEquals("1.3", dep.getArtifact().getVersion());
+        assertEquals(false, dep.isOptional());
+        assertEquals(0, dep.getExclusions().size());
+
+        dep = mandep("com.acme:foo:war::-");
+        assertEquals("com.acme", dep.getArtifact().getGroupId());
+        assertEquals("foo", dep.getArtifact().getArtifactId());
+        assertEquals("war", dep.getArtifact().getExtension());
+        assertEquals("", dep.getArtifact().getClassifier());
+        assertEquals("", dep.getArtifact().getVersion());
+        assertEquals(true, dep.isOptional());
         assertEquals(0, dep.getExclusions().size());
     }
 

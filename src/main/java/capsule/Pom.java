@@ -212,7 +212,7 @@ public final class Pom {
         return dep.getGroupId() + ":" + dep.getArtifactId()
                + ":" + (dep.getType() != null ? dep.getType() : "")
                + ":" + (dep.getClassifier() != null ? dep.getClassifier() : "")
-               + ":" + (dep.getVersion() != null ? dep.getVersion() : "");
+               + ":" + (dep.isOptional() ? "-" : dep.getVersion() != null ? dep.getVersion() : "");
     }
 
     private static String repoToString(Repository repo) {

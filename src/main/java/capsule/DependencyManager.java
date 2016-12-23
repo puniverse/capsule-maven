@@ -474,21 +474,10 @@ public class DependencyManager {
         return new Dependency(coordsToArtifact(coords, type), JavaScopes.RUNTIME, false, getExclusions(coords));
     }
 
-    public static Dependency toManagedDependency(String coords) {
-        return new Dependency(coordsToManagedDeptArtifact(coords), JavaScopes.RUNTIME, false, null);
-    }
-
     protected static List<Dependency> toDependencies(List<String> coords, String type) {
         final List<Dependency> deps = new ArrayList<>(coords.size());
         for (String c : coords)
             deps.add(toDependency(c, type));
-        return deps;
-    }
-    
-    protected static List<Dependency> toManagedDependencies(List<String> coords) {
-        final List<Dependency> deps = new ArrayList<>(coords.size());
-        for (String c : coords)
-            deps.add(toManagedDependency(c));
         return deps;
     }
 
@@ -535,10 +524,17 @@ public class DependencyManager {
         }
         return exclusions;
     }
-    
+
+    protected static List<Dependency> toManagedDependencies(List<String> coords) {
+        final List<Dependency> deps = new ArrayList<>(coords.size());
+        for (String c : coords)
+            deps.add(toManagedDependency(c));
+        return deps;
+    }
+
     private static final Pattern PAT_DEPENDENCY_MANAGEMENT = Pattern.compile("(?<groupId>[^:\\(]+):(?<artifactId>[^:\\(]+):(?<type>[^:\\(]*):(?<classifier>[^:\\(]*):(?<version>\\(?[^:\\(]+)");
 
-    private static Artifact coordsToManagedDeptArtifact(String depString) {
+    private static Dependency toManagedDependency(String depString) {
         final Matcher m = PAT_DEPENDENCY_MANAGEMENT.matcher(depString);
         if (!m.matches())
             throw new IllegalArgumentException("Could not parse dependency management: " + depString);
@@ -547,10 +543,17 @@ public class DependencyManager {
         final String artifactId = m.group("artifactId");
         final String type = emptyToNull(m.group("type"));
         final String classifier = emptyToNull(m.group("classifier"));
-        final String version = emptyToNull(m.group("version"));
+        String version = emptyToNull(m.group("version"));
         if (version == null)
             throw new IllegalArgumentException("No version information is provided for managed dependency " + depString);
-        return new DefaultArtifact(groupId, artifactId, classifier, type, version);
+        
+        boolean optional = false;
+        if ("-".equals(version)) {
+            version = null;
+            optional = true;
+        }
+        final Artifact artifact =  new DefaultArtifact(groupId, artifactId, classifier, type, version);
+        return new Dependency(artifact, JavaScopes.RUNTIME, optional);
     }
     //</editor-fold>
 

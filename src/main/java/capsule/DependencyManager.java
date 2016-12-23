@@ -336,7 +336,7 @@ public class DependencyManager {
     //<editor-fold defaultstate="collapsed" desc="Operations">
     /////////// Operations ///////////////////////////////////
     private CollectRequest collect() {
-        return new CollectRequest().setRepositories(repos);
+        return new CollectRequest().setRepositories(repos).setManagedDependencies(managedDependencies);
     }
 
     public final void printDependencyTree(List<String> coords, String type, PrintStream out) {
@@ -344,7 +344,7 @@ public class DependencyManager {
     }
 
     public final void printDependencyTree(List<Dependency> deps, PrintStream out) {
-        printDependencyTree(collect().setManagedDependencies(managedDependencies).setDependencies(deps), out);
+        printDependencyTree(collect().setDependencies(deps), out);
     }
 
     public final void printDependencyTree(String coords, String type, PrintStream out) {
@@ -361,7 +361,7 @@ public class DependencyManager {
     }
 
     public final List<Path> resolveDependencies(List<String> coords, String type) {
-        return resolve(collect().setManagedDependencies(managedDependencies).setDependencies(toDependencies(coords, type)));
+        return resolve(collect().setDependencies(toDependencies(coords, type)));
     }
 
     public final List<Path> resolveDependency(String coords, String type) {
@@ -369,7 +369,7 @@ public class DependencyManager {
     }
 
     public final Map<Dependency, List<Path>> resolveDependencies(List<Dependency> deps) {
-        final List<DependencyNode> children = resolve0(collect().setManagedDependencies(managedDependencies).setDependencies(deps)).getRoot().getChildren();
+        final List<DependencyNode> children = resolve0(collect().setDependencies(deps)).getRoot().getChildren();
         
         final Map<Dependency, List<Path>> resolved = new HashMap<>();
         for (DependencyNode dn : children) {

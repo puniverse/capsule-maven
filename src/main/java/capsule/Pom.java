@@ -32,6 +32,7 @@ public final class Pom {
     private final MavenCapsule capsule;
     private Pom parent;
     private Map<String, Dependency> managedDependencies;
+    private Map<String, String> props;
 
     public Pom(InputStream is, Pom root, MavenCapsule capsule) {
         try {
@@ -99,8 +100,15 @@ public final class Pom {
         return pom.getId();
     }
 
-    public Properties getProperties() {
-        return pom.getProperties();
+    public Map<String, String> getProperties() {
+        if (props == null) {
+            props = new HashMap<>();
+            if (getParent() != null)
+                props.putAll(getParent().getProperties());
+            for (Map.Entry<Object, Object> e : pom.getProperties().entrySet())
+                props.put((String) e.getKey(), (String) e.getValue());
+        }
+        return props;
     }
 
     public List<String> getRepositories() {
@@ -226,7 +234,7 @@ public final class Pom {
         if (s == null)
             return null;
 
-        final Properties ps = getProperties();
+        final Map<String, String> ps = getProperties();
         String ret = s;
         if (getGroupId() != null)
             ret = ret.replace("${project.groupId}", getGroupId()).replace("${pom.groupId}", getGroupId());
@@ -235,8 +243,8 @@ public final class Pom {
                     .replace("${project.version}", getVersion())
                     .replace("${pom.version}", getVersion())
                     .replace("${version}", getVersion());
-        for (String pName : ps.stringPropertyNames())
-            ret = ret.replace("${" + pName + "}", ps.getProperty(pName));
+        for (String pName : ps.keySet())
+            ret = ret.replace("${" + pName + "}", ps.get(pName));
         return ret;
     }
 }

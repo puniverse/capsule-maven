@@ -94,6 +94,7 @@ The [Dependencies class](https://github.com/puniverse/capsule-maven/blob/master/
 
 * `Repositories`: a list of Maven repositories formatted as `URL` or `NAME(URL)`
 * `Allow-Snapshots`: If `true`, allows for SNAPSHOT dependencies (default: `false`)
+* `Managed-Dependencies`: A list of managed dependencies, forcing versions in transitive dependencies *if* they depend on any of these, each formatted as `group:artifact:type:classifier:version`. Note that the format is different from that of dependencies.
 
 ### Actions
 

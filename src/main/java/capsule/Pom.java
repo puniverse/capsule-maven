@@ -13,7 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -29,6 +31,7 @@ public final class Pom {
     private final Pom root;
     private final MavenCapsule capsule;
     private Pom parent;
+    private Map<String, Dependency> managedDependencies;
 
     public Pom(InputStream is, Pom root, MavenCapsule capsule) {
         try {
@@ -122,24 +125,39 @@ public final class Pom {
         }
         return dependencies;
     }
+    
+    public List<String> getManagedDependencies() {
+        final Map<String, Dependency> deps = getManagedDependencies0();
+        if (deps == null)
+            return Collections.emptyList();
 
-    private Dependency resolveVersion(Dependency dep) {
+        final List<String> dependencies = new ArrayList<>(deps.size());
+        for (Dependency dep : deps.values())
+            dependencies.add(resolve(depManagement2coords(dep)));
+        return dependencies;
+    }
+    
+    public Map<String, Dependency> getManagedDependencies0() {
+        if (managedDependencies == null) {
+            managedDependencies = new HashMap<>();
+            if (getParent() != null)
+                managedDependencies.putAll(getParent().getManagedDependencies0());
+            for (Dependency d : pom.getDependencyManagement().getDependencies())
+                managedDependencies.put(d.getManagementKey(), d);
+        } 
+        return managedDependencies;
+    }
+
+    /**
+     * Applies dependency management to dependency versions
+     */
+    private Dependency manageVersion(Dependency dep) {
         if (dep.getVersion() != null)
             return dep;
-
-        final List<Dependency> deps = pom.getDependencyManagement().getDependencies();
-        for (Dependency d : deps) {
-            if (Objects.equals(d.getManagementKey(), dep.getManagementKey())) {
-                dep.setVersion(d.getVersion());
-                break;
-            }
-        }
-
-        if (dep.getVersion() != null)
-            return dep;
-
-        if (getParent() != null)
-            return getParent().resolveVersion(dep);
+        
+        Dependency md = getManagedDependencies0().get(dep.getManagementKey());
+        if (md != null)
+            dep.setVersion(md.getVersion());
 
         return dep;
     }
@@ -158,7 +176,7 @@ public final class Pom {
         }
     }
 
-    private static String convert(Dependency dep) {
+    private static String depToString(Dependency dep) {
         return dep2coords(dep) + exclusions2desc(dep);
     }
 

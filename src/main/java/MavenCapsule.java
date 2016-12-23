@@ -43,7 +43,7 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
     private static final int PROFILE = emptyOrTrue(System.getProperty(PROP_PROFILE)) ? LOG_QUIET : LOG_DEBUG;
 
     private static final Entry<String, List<String>> ATTR_REPOSITORIES = ATTRIBUTE("Repositories", T_LIST(T_STRING()), asList("central"), true, "A list of Maven repositories, each formatted as URL or NAME(URL)");
-    private static final Entry<String, List<String>> ATTR_MANAGED_DEPENDENCIES = ATTRIBUTE("Managed-Dependencies", T_LIST(T_STRING()), asList("central"), true, "A list of managed dependencies, forcing versions in transitive dependencies, each formatted as group:artifact:type:classifier:version");
+    private static final Entry<String, List<String>> ATTR_MANAGED_DEPENDENCIES = ATTRIBUTE("Managed-Dependencies", T_LIST(T_STRING()), null, true, "A list of managed dependencies, forcing versions in transitive dependencies, each formatted as group:artifact:type:classifier:version");
     private static final Entry<String, Boolean> ATTR_ALLOW_SNAPSHOTS = ATTRIBUTE("Allow-Snapshots", T_BOOL(), false, true, "Whether or not SNAPSHOT dependencies are allowed");
 
     private static final String ENV_CAPSULE_REPOS = "CAPSULE_REPOS";

@@ -175,7 +175,7 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
             if ((deps == null || deps.isEmpty()) && pom != null) {
                 deps = new ArrayList<>();
                 for (String d : pom.getDependencies("jar"))
-                    deps.add(pom.resolve(d));
+                    deps.add(d);
                 // deps.add(lookup(pom.resolve(d), "jar", ATTR_DEPENDENCIES, null));
             }
             return (T) deps;
@@ -188,7 +188,7 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
             if ((deps == null || deps.isEmpty()) && pom != null) {
                 deps = new LinkedHashMap<>();
                 for (String d : pom.getDependencies(getNativeLibExtension()))
-                    deps.put(pom.resolve(d), "");
+                    deps.put(d, "");
             }
             return (T) deps;
         }
@@ -227,7 +227,7 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
                 final Pom pom1 = createPomReader(getWritableAppCache().resolve((Path) res), getPomJarEntryName(dep), pom);
                 if (pom1 != null) {
                     for (String d : pom1.getDependencies(type))
-                        addFlat(lookup0(pom1.resolve(d), type, attrContext, null), ret);
+                        addFlat(lookup0(d, type, attrContext, null), ret);
                 }
             }
             return ret;

@@ -106,7 +106,7 @@ public final class Pom {
 
         final List<String> repositories = new ArrayList<>(repos.size());
         for (Repository repo : repos)
-            repositories.add(convert(repo));
+            repositories.add(repoToString(repo));
         return repositories;
     }
 
@@ -118,7 +118,7 @@ public final class Pom {
         final List<String> dependencies = new ArrayList<>(deps.size());
         for (Dependency dep : deps) {
             if (includeDependency(dep) && type.equals(dep.getType()))
-                dependencies.add(convert(resolveVersion(dep)));
+                dependencies.add(resolve(depToString(manageVersion(dep))));
         }
         return dependencies;
     }
@@ -187,13 +187,20 @@ public final class Pom {
         return ex.getGroupId() + ":" + ex.getArtifactId();
     }
 
-    private static String convert(Repository repo) {
+    private static String depManagement2coords(Dependency dep) {
+        return dep.getGroupId() + ":" + dep.getArtifactId()
+               + ":" + (dep.getType() != null ? dep.getType() : "")
+               + ":" + (dep.getClassifier() != null ? dep.getClassifier() : "")
+               + ":" + (dep.getVersion() != null ? dep.getVersion() : "");
+    }
+
+    private static String repoToString(Repository repo) {
         if (repo.getId() != null && !repo.getId().isEmpty())
             return repo.getId() + "(" + repo.getUrl() + ")";
         return repo.getUrl();
     }
 
-    public String resolve(String s) {
+    private String resolve(String s) {
         if (s == null)
             return null;
 

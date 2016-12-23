@@ -69,6 +69,7 @@ public final class Pom {
 
         if (capsule != null) {
             try {
+                capsule.log1(MavenCapsule.LOG_VERBOSE1, "Resolving parent " + pom.getParent() + " of pom " + pom);
                 final String coords = group + ":" + artifactId + ":" + version;
                 final List<Path> ps = capsule.lookupAndResolve(coords, "pom");
                 if (!ps.isEmpty())

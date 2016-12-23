@@ -137,13 +137,16 @@ public final class Pom {
         return dependencies;
     }
     
-    public Map<String, Dependency> getManagedDependencies0() {
+    private Map<String, Dependency> getManagedDependencies0() {
         if (managedDependencies == null) {
             managedDependencies = new HashMap<>();
             if (getParent() != null)
                 managedDependencies.putAll(getParent().getManagedDependencies0());
-            for (Dependency d : pom.getDependencyManagement().getDependencies())
-                managedDependencies.put(d.getManagementKey(), d);
+            
+            if (pom.getDependencyManagement() != null) {
+                for (Dependency d : pom.getDependencyManagement().getDependencies())
+                    managedDependencies.put(d.getManagementKey(), d);
+            }
         } 
         return managedDependencies;
     }
@@ -155,7 +158,7 @@ public final class Pom {
         if (dep.getVersion() != null)
             return dep;
         
-        Dependency md = getManagedDependencies0().get(dep.getManagementKey());
+        final Dependency md = getManagedDependencies0().get(dep.getManagementKey());
         if (md != null)
             dep.setVersion(md.getVersion());
 

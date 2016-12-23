@@ -474,7 +474,7 @@ public class DependencyManager {
         return new Dependency(coordsToArtifact(coords, type), JavaScopes.RUNTIME, false, getExclusions(coords));
     }
 
-    protected static List<Dependency> toDependencies(List<String> coords, String type) {
+    private static List<Dependency> toDependencies(List<String> coords, String type) {
         final List<Dependency> deps = new ArrayList<>(coords.size());
         for (String c : coords)
             deps.add(toDependency(c, type));
@@ -534,7 +534,7 @@ public class DependencyManager {
 
     private static final Pattern PAT_DEPENDENCY_MANAGEMENT = Pattern.compile("(?<groupId>[^:\\(]+):(?<artifactId>[^:\\(]+):(?<type>[^:\\(]*):(?<classifier>[^:\\(]*):(?<version>\\(?[^:\\(]+)");
 
-    private static Dependency toManagedDependency(String depString) {
+    static Dependency toManagedDependency(String depString) {
         final Matcher m = PAT_DEPENDENCY_MANAGEMENT.matcher(depString);
         if (!m.matches())
             throw new IllegalArgumentException("Could not parse dependency management: " + depString);

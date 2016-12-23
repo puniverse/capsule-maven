@@ -106,6 +106,7 @@ public class DependencyManager {
     private final LocalRepository localRepo;
     private RepositorySystemSession session;
     private List<RemoteRepository> repos;
+    private List<Dependency> managedDependencies;
     private final int logLevel;
 
     //<editor-fold desc="Construction and Setup">
@@ -124,7 +125,7 @@ public class DependencyManager {
         this.system = newRepositorySystem();
     }
 
-    public final void setRepositories(List<String> repos, boolean allowSnapshots) {
+    public final DependencyManager setRepositories(List<String> repos, boolean allowSnapshots) {
         if (repos == null)
             //noinspection ArraysAsListWithZeroOrOneArgument
             repos = Arrays.asList("central");
@@ -140,8 +141,14 @@ public class DependencyManager {
             this.repos = rs;
             log(LOG_VERBOSE, "Dependency manager repositories: " + this.repos);
         }
+        return this;
     }
 
+    public final DependencyManager setManagedDependencies(List<String> managedDependencies) {
+        this.managedDependencies = toManagedDependencies(managedDependencies);
+        return this;
+    }
+    
     /** @noinspection UnusedParameters*/
     private RepositoryPolicy makeReleasePolicy(String repo) {
         return new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_NEVER, RepositoryPolicy.CHECKSUM_POLICY_WARN);
@@ -337,7 +344,7 @@ public class DependencyManager {
     }
 
     public final void printDependencyTree(List<Dependency> deps, PrintStream out) {
-        printDependencyTree(collect().setDependencies(deps), out);
+        printDependencyTree(collect().setManagedDependencies(managedDependencies).setDependencies(deps), out);
     }
 
     public final void printDependencyTree(String coords, String type, PrintStream out) {
@@ -354,7 +361,7 @@ public class DependencyManager {
     }
 
     public final List<Path> resolveDependencies(List<String> coords, String type) {
-        return resolve(collect().setDependencies(toDependencies(coords, type)));
+        return resolve(collect().setManagedDependencies(managedDependencies).setDependencies(toDependencies(coords, type)));
     }
 
     public final List<Path> resolveDependency(String coords, String type) {
@@ -362,7 +369,7 @@ public class DependencyManager {
     }
 
     public final Map<Dependency, List<Path>> resolveDependencies(List<Dependency> deps) {
-        final List<DependencyNode> children = resolve0(collect().setDependencies(deps)).getRoot().getChildren();
+        final List<DependencyNode> children = resolve0(collect().setManagedDependencies(managedDependencies).setDependencies(deps)).getRoot().getChildren();
         
         final Map<Dependency, List<Path>> resolved = new HashMap<>();
         for (DependencyNode dn : children) {
@@ -467,10 +474,21 @@ public class DependencyManager {
         return new Dependency(coordsToArtifact(coords, type), JavaScopes.RUNTIME, false, getExclusions(coords));
     }
 
+    public static Dependency toManagedDependency(String coords) {
+        return new Dependency(coordsToManagedDeptArtifact(coords), JavaScopes.RUNTIME, false, null);
+    }
+
     protected static List<Dependency> toDependencies(List<String> coords, String type) {
         final List<Dependency> deps = new ArrayList<>(coords.size());
         for (String c : coords)
             deps.add(toDependency(c, type));
+        return deps;
+    }
+    
+    protected static List<Dependency> toManagedDependencies(List<String> coords) {
+        final List<Dependency> deps = new ArrayList<>(coords.size());
+        for (String c : coords)
+            deps.add(toManagedDependency(c));
         return deps;
     }
 
@@ -494,9 +512,7 @@ public class DependencyManager {
 
         final String groupId = m.group("groupId");
         final String artifactId = m.group("artifactId");
-        String version = m.group("version");
-        if (version == null || version.isEmpty())
-            version = null; // throw new IllegalArgumentException("No version information is provided for dependency " + depString);
+        final String version = emptyToNull(m.group("version"));
         final String classifier = m.group("classifier");
         return new DefaultArtifact(groupId, artifactId, classifier, type, version);
     }
@@ -518,6 +534,23 @@ public class DependencyManager {
             exclusions.add(new Exclusion(coords[0], coords[1], "*", "*"));
         }
         return exclusions;
+    }
+    
+    private static final Pattern PAT_DEPENDENCY_MANAGEMENT = Pattern.compile("(?<groupId>[^:\\(]+):(?<artifactId>[^:\\(]+):(?<type>[^:\\(]*):(?<classifier>[^:\\(]*):(?<version>\\(?[^:\\(]+)");
+
+    private static Artifact coordsToManagedDeptArtifact(String depString) {
+        final Matcher m = PAT_DEPENDENCY_MANAGEMENT.matcher(depString);
+        if (!m.matches())
+            throw new IllegalArgumentException("Could not parse dependency management: " + depString);
+
+        final String groupId = m.group("groupId");
+        final String artifactId = m.group("artifactId");
+        final String type = emptyToNull(m.group("type"));
+        final String classifier = emptyToNull(m.group("classifier"));
+        final String version = emptyToNull(m.group("version"));
+        if (version == null)
+            throw new IllegalArgumentException("No version information is provided for managed dependency " + depString);
+        return new DefaultArtifact(groupId, artifactId, classifier, type, version);
     }
     //</editor-fold>
 

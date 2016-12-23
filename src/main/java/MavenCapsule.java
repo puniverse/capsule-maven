@@ -43,6 +43,7 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
     private static final int PROFILE = emptyOrTrue(System.getProperty(PROP_PROFILE)) ? LOG_QUIET : LOG_DEBUG;
 
     private static final Entry<String, List<String>> ATTR_REPOSITORIES = ATTRIBUTE("Repositories", T_LIST(T_STRING()), asList("central"), true, "A list of Maven repositories, each formatted as URL or NAME(URL)");
+    private static final Entry<String, List<String>> ATTR_MANAGED_DEPENDENCIES = ATTRIBUTE("Managed-Dependencies", T_LIST(T_STRING()), asList("central"), true, "A list of managed dependencies, each formatted as group:artifact:type:classifier:version");
     private static final Entry<String, Boolean> ATTR_ALLOW_SNAPSHOTS = ATTRIBUTE("Allow-Snapshots", T_BOOL(), false, true, "Whether or not SNAPSHOT dependencies are allowed");
 
     private static final String ENV_CAPSULE_REPOS = "CAPSULE_REPOS";
@@ -72,8 +73,10 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
     @Override
     protected void finalizeCapsule() {
         this.pom = createPomReader(getJarFile(), POM_FILE, null);
-        if (dependencyManager != null)
+        if (dependencyManager != null) {
             setDependencyRepositories(getAttribute(ATTR_REPOSITORIES));
+            setManagedDependencies();
+        }
 
         super.finalizeCapsule();
     }
@@ -193,6 +196,15 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
             return (T) deps;
         }
 
+        if (ATTR_MANAGED_DEPENDENCIES.equals(attr)) {
+            List<String> deps = super.attribute(ATTR_MANAGED_DEPENDENCIES);
+
+            // find deps in POM if not in manifest
+            if ((deps == null || deps.isEmpty()) && pom != null)
+                deps = pom.getManagedDependencies();
+            return (T) deps;
+        }
+
         if (ATTR_REPOSITORIES.equals(attr)) {
             final List<String> repos = new ArrayList<>();
             repos.addAll(nullToEmpty(split(getenv(ENV_CAPSULE_REPOS), "[,\\s]\\s*")));
@@ -297,8 +309,10 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
     private DependencyManager initDependencyManager() {
         if (dependencyManager == null) {
             dependencyManager = createDependencyManager();
-            if (dependencyManager != null)
+            if (dependencyManager != null) {
                 setDependencyRepositories(getAttribute(ATTR_REPOSITORIES));
+                setManagedDependencies();
+            }
         }
         return dependencyManager;
     }
@@ -320,6 +334,10 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
 
     private void setDependencyRepositories(List<String> repositories) {
         getDependencyManager().setRepositories(repositories, getAttribute(ATTR_ALLOW_SNAPSHOTS));
+    }
+
+    private void setManagedDependencies() {
+        getDependencyManager().setManagedDependencies(getAttribute(ATTR_MANAGED_DEPENDENCIES));
     }
 
     private Path getLocalRepo() {

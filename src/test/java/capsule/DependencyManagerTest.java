@@ -130,6 +130,43 @@ public class DependencyManagerTest {
     }
 
     @Test
+    public void testParseManagedDependency() {
+        Dependency dep;
+
+        dep = mandep("com.acme:foo:war:jdk8:1.3");
+        assertEquals("com.acme", dep.getArtifact().getGroupId());
+        assertEquals("foo", dep.getArtifact().getArtifactId());
+        assertEquals("war", dep.getArtifact().getExtension());
+        assertEquals("jdk8", dep.getArtifact().getClassifier());
+        assertEquals("1.3", dep.getArtifact().getVersion());
+        assertEquals(0, dep.getExclusions().size());
+
+        dep = mandep("com.acme:foo::jdk8:1.3");
+        assertEquals("com.acme", dep.getArtifact().getGroupId());
+        assertEquals("foo", dep.getArtifact().getArtifactId());
+        assertEquals("", dep.getArtifact().getExtension());
+        assertEquals("jdk8", dep.getArtifact().getClassifier());
+        assertEquals("1.3", dep.getArtifact().getVersion());
+        assertEquals(0, dep.getExclusions().size());
+
+        dep = mandep("com.acme:foo:war::1.3");
+        assertEquals("com.acme", dep.getArtifact().getGroupId());
+        assertEquals("foo", dep.getArtifact().getArtifactId());
+        assertEquals("war", dep.getArtifact().getExtension());
+        assertEquals("", dep.getArtifact().getClassifier());
+        assertEquals("1.3", dep.getArtifact().getVersion());
+        assertEquals(0, dep.getExclusions().size());
+
+        dep = mandep("com.acme:foo:::1.3");
+        assertEquals("com.acme", dep.getArtifact().getGroupId());
+        assertEquals("foo", dep.getArtifact().getArtifactId());
+        assertEquals("", dep.getArtifact().getExtension());
+        assertEquals("", dep.getArtifact().getClassifier());
+        assertEquals("1.3", dep.getArtifact().getVersion());
+        assertEquals(0, dep.getExclusions().size());
+    }
+
+    @Test
     public void testParseRepo() {
         RemoteRepository repo;
 
@@ -164,6 +201,10 @@ public class DependencyManagerTest {
 
     private static Dependency dep(String desc) {
         return DependencyManager.toDependency(desc, "jar");
+    }
+
+    private static Dependency mandep(String desc) {
+        return DependencyManager.toManagedDependency(desc);
     }
 
     private static Exclusion exc(Dependency dep, int i) {

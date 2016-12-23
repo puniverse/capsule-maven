@@ -319,7 +319,7 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
     }
 
     private void setDependencyRepositories(List<String> repositories) {
-        getDependencyManager().setRepos(repositories, getAttribute(ATTR_ALLOW_SNAPSHOTS));
+        getDependencyManager().setRepositories(repositories, getAttribute(ATTR_ALLOW_SNAPSHOTS));
     }
 
     private Path getLocalRepo() {

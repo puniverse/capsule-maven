@@ -124,7 +124,7 @@ public class DependencyManager {
         this.system = newRepositorySystem();
     }
 
-    public final void setRepos(List<String> repos, boolean allowSnapshots) {
+    public final void setRepositories(List<String> repos, boolean allowSnapshots) {
         if (repos == null)
             //noinspection ArraysAsListWithZeroOrOneArgument
             repos = Arrays.asList("central");

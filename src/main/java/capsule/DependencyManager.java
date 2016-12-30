@@ -57,6 +57,7 @@ import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.resolution.VersionRequest;
 import org.eclipse.aether.resolution.VersionResult;
+import org.eclipse.aether.util.artifact.ArtifactIdUtils;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.eclipse.aether.util.graph.transformer.ConflictResolver;
 import org.eclipse.aether.version.Version;
@@ -378,7 +379,7 @@ public class DependencyManager {
             dn.accept(new DependencyVisitor() {
                 @Override
                 public final boolean visitEnter(DependencyNode node) {
-                    if (hasArtifactPath(node)) // Conflict losers won't have it
+                    if (!isLoser(node))
                         jars.add(path(node.getArtifact()));
                     return true;
                 }
@@ -409,7 +410,7 @@ public class DependencyManager {
                 public boolean accept(DependencyNode n, List<DependencyNode> parents) {
                     // Exclude conflict losers (which are marked but left in if verbose mode is enabled, see
                     // http://git.eclipse.org/c/aether/aether-core.git/diff/aether-util/src/main/java/org/eclipse/aether/util/graph/transformer/ConflictResolver.java?id=141a3669d23ab67846b0c3ccef14eb0cdc70cee9t
-                    return !n.getData().containsKey(ConflictResolver.NODE_DATA_WINNER);
+                    return !isLoser(n);
                 }
             });
             final DependencyResult result = system.resolveDependencies(getSession(), dependencyRequest);
@@ -451,6 +452,11 @@ public class DependencyManager {
         return artifact.getFile().toPath().toAbsolutePath();
     }
 
+    private boolean isLoser(DependencyNode dn) {
+        final DependencyNode winner = (DependencyNode) dn.getData().get(ConflictResolver.NODE_DATA_WINNER);
+        return winner != null && !ArtifactIdUtils.equalsId(dn.getArtifact(), winner.getArtifact());
+    }
+    
     private Dependency clean(Dependency d) {
         // necessary for dependency equality
         // SNAPSHOT dependencies get resolved to specific artifacts, so returned dependency is different from original

@@ -31,7 +31,9 @@ import org.eclipse.aether.graph.Dependency;
  */
 public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
     @SuppressWarnings("FieldNameHidesFieldInSuperclass")
-    public static final String VERSION = "1.0.4";
+    public  static final String VERSION = "1.0.4";
+    private static final String CAPLET_NAME = MavenCapsule.class.getName();
+    static { requireCapsuleVersion("1.0.4"); }
     
     private static final String PROP_TREE = OPTION("capsule.tree", "false", "printDependencyTree", "Prints the capsule's dependency tree.");
     private static final String PROP_RESOLVE = OPTION("capsule.resolve", "false", "resolve", "Downloads all un-cached dependencies.");
@@ -470,6 +472,18 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
     private static void time(String op, long start, long stop) {
         if (isLogging(PROFILE))
             log(PROFILE, "PROFILE " + op + " " + ((stop - start) / 1_000_000) + "ms");
+    }
+    
+    private static void requireCapsuleVersion(String minVer) {
+        try {
+            final String capsuleVersion = (String) Capsule.class.getField("VERSION").get(null); // don't use static constant as it's inlined
+
+            if (Capsule.compareVersions(capsuleVersion, minVer) < 0)
+                throw new IllegalStateException("This version of the " + CAPLET_NAME + " caplet, " + VERSION
+                                                + ", requires a minimal Capsule version of " + minVer + " but it is " + capsuleVersion);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Caplet " + CAPLET_NAME + " could not obtain Capsule's version");
+        }
     }
     //</editor-fold>
 }

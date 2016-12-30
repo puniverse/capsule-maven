@@ -90,28 +90,16 @@ public class MavenCapsule extends Capsule implements capsule.MavenCapsule {
         verifyNonEmpty("Cannot print dependencies of a wrapper capsule.");
         STDOUT.println("Dependencies for " + getAppId());
 
-        if (hasAttribute(ATTR_APP_ARTIFACT)) {
-            final String appArtifact = getAttribute(ATTR_APP_ARTIFACT);
-            if (isDependency(appArtifact))
-                getDependencyManager().printDependencyTree(appArtifact, "jar", STDOUT);
-        } else {
-            lookupAllDependencies();
-            if (dependencies.isEmpty())
-                STDOUT.println("No external dependencies.");
-            else
-                getDependencyManager().printDependencyTree(getUnresolved(), STDOUT);
-        }
+        lookupAllDependencies();
+        if (dependencies.isEmpty())
+            STDOUT.println("No external dependencies.");
+        else
+            getDependencyManager().printDependencyTree(getUnresolved(), STDOUT);
     }
 
     void resolve(List<String> args) throws IOException, InterruptedException {
         verifyNonEmpty("Cannot resolve a wrapper capsule.");
-
-        if (hasAttribute(ATTR_APP_ARTIFACT)) {
-            final String appArtifact = getAttribute(ATTR_APP_ARTIFACT);
-            lookup(appArtifact);
-        }
         lookupAllDependencies();
-
         getDependencyManager().resolveDependencies(getUnresolved());
         log(LOG_QUIET, "Capsule resolved");
     }
